@@ -62,26 +62,29 @@ aws bedrock list-inference-profiles --region ap-northeast-1 \
    CloudFormation / S3(asset) / IAM(ロール作成) / Cognito / DynamoDB /
    `bedrock-agentcore:*`(Memory/Runtime 作成) / Logs / SSM(bootstrap パラメータ) が必要。
 
-### 2.4 E2E 実行ロール（任意・E2E を CI で回す場合）— 利用者が作成
-CloudFormation 読取（`describe-stacks`）+ Cognito 管理
-（`cognito-idp:AdminCreateUser` / `AdminSetUserPassword`）。
+### 2.4 E2E はローカル実行
+E2E は CI ではなく**ローカルで実行**する（下記 5）。専用ロールは不要で、実行者の AWS
+認証情報に Cognito 管理（`cognito-idp:AdminCreateUser` / `AdminSetUserPassword`）と
+AgentCore 呼び出し権限があればよい。
 
 ---
 
 ## 3. GitHub secrets / variables
 
+CD（infra デプロイ）に必要なもののみ:
+
 | 種別 | キー | 用途 |
 |---|---|---|
 | secret | `AWS_DEPLOY_ROLE_ARN` | CD: デプロイロール（OIDC） |
 | secret | `AWS_ACCOUNT_ID` | CD: `CDK_DEFAULT_ACCOUNT` |
-| secret | `AWS_E2E_ROLE_ARN` | E2E: 実行ロール（OIDC） |
-| secret | `E2E_USER_PASSWORD` | E2E: テストユーザーのパスワード |
 | variable | `BEDROCK_MODEL_ID` | `jp.anthropic.claude-*` |
 | variable | `AGENT_MANAGED_RUNTIME` | 例 `NODEJS_22` |
-| variable | `AGENT_RUNTIME_URL` | AgentCore Runtime の invoke エンドポイント |
-| variable | `E2E_USER_EMAIL` | E2E: テストユーザーの email |
 
 GitHub の Environment `production` に protection rule（手動承認）を設定すること。
+
+> E2E はローカル実行のため GitHub secrets は不要。E2E 用の値（`COGNITO_*` /
+> `AGENT_RUNTIME_URL` / `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` / `AWS_REGION` /
+> `AWS_PROFILE`）は `apps/web/.env.local` に集約する。
 
 ---
 
@@ -108,26 +111,29 @@ cp apps/web/.env.example apps/web/.env.local   # COGNITO_*, AGENT_RUNTIME_URL
 CI/CD は GitHub Actions:
 - `.github/workflows/ci.yml` — PR/push で typecheck/test/build/synth
 - `.github/workflows/cd.yml` — main で OIDC → `cdk deploy`（要 Environment 承認）
-- `.github/workflows/e2e.yml` — workflow_dispatch で実 AWS E2E
+
+E2E はローカル実行（下記 5）。
 
 ---
 
 ## 5. ローカル E2E（実 AWS 接続）
 
 EvoStack デプロイ済み + AWS 認証情報（Cognito 管理権限）が必要。
+設定は **`apps/web/.env.local` に集約**する（`playwright.config.ts` が読み込むため export 不要）。
 
 ```bash
-# web/.env.local に実 COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID / AGENT_RUNTIME_URL / AWS_REGION
-export E2E_USER_EMAIL=e2e@example.com
-export E2E_USER_PASSWORD='Passw0rd!example'
-export COGNITO_USER_POOL_ID=... AWS_REGION=ap-northeast-1
+# 1. .env.local を用意して実値を記入
+cp apps/web/.env.example apps/web/.env.local
+#    AWS_REGION / AWS_PROFILE / COGNITO_USER_POOL_ID / COGNITO_CLIENT_ID /
+#    AGENT_RUNTIME_URL / E2E_USER_EMAIL / E2E_USER_PASSWORD
 
+# 2. ビルド → ブラウザ取得 → E2E 実行（export 不要）
 pnpm --filter @evo/web build
 pnpm --filter @evo/web exec playwright install chromium
 pnpm --filter @evo/web e2e
 ```
 
-`e2e/global-setup.ts` がテストユーザーを Cognito に用意（確認済み・恒久パスワード）、
+`e2e/global-setup.ts` が `.env.local` の値でテストユーザーを Cognito に用意（確認済み・恒久パスワード）、
 `e2e/chat.spec.ts` がログイン→チャット→ストリーミング応答を検証する。
 
 ---

@@ -1,4 +1,10 @@
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "@playwright/test";
+
+// ローカル E2E: .env.local（無ければ .env）から設定を読み込み、実行時の export を不要にする。
+// 既に設定済みの環境変数は上書きしない（CI 等での注入を尊重）。
+loadEnv({ path: ".env.local" });
+loadEnv({ path: ".env" });
 
 /**
  * 実 AWS 接続 E2E。

@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # consumer は @evo/shared の dist を参照するため先に build
+      - run: pnpm --filter @evo/shared build
+
+      - name: Typecheck (all)
+        run: pnpm -r typecheck
+
+      - name: Unit tests (all)
+        run: pnpm -r test
+
+      - name: Build agent (CodeZip 用バンドル)
+        run: pnpm --filter @evo/agent-chat build
+
+      - name: Build web
+        run: pnpm --filter @evo/web build
+
+      - name: CDK synth
+        working-directory: infra
+        run: pnpm synth
+        env:
+          # synth はリソース ID 不要。モデル ID はダミーで型/構造のみ検証
+          AWS_REGION: ap-northeast-1
+          BEDROCK_MODEL_ID: jp.anthropic.claude-ci-dummy-v1:0

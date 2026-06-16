@@ -11,7 +11,9 @@ function buildTemplate(): Template {
     modelId: "jp.anthropic.claude-test-v1:0",
     agentRuntimeName: "evo_chat_test",
     managedRuntime: "NODEJS_22",
-    agentCodePath: path.join(__dirname, "..", "..", "agents", "chat", "dist"),
+    // テンプレート検証では S3 Asset の中身は不問。ビルド非依存にするため、
+    // 常に存在する test ディレクトリ自身を Asset パスに使う。
+    agentCodePath: path.join(__dirname),
   });
   return Template.fromStack(stack);
 }

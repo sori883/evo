@@ -10,7 +10,7 @@ function buildTemplate(): Template {
     env: { account: "123456789012", region: "ap-northeast-1" },
     modelId: "jp.anthropic.claude-test-v1:0",
     agentRuntimeName: "evo_chat_test",
-    managedRuntime: "NODEJS_22",
+    managedRuntime: "NODE_22",
     // テンプレート検証では S3 Asset の中身は不問。ビルド非依存にするため、
     // 常に存在する test ディレクトリ自身を Asset パスに使う。
     agentCodePath: path.join(__dirname),
@@ -65,7 +65,7 @@ describe("EvoStack", () => {
 
   it("Memory が秒指定の expiry と semantic namespace を持つ（agent と整合）", () => {
     template.hasResourceProperties("AWS::BedrockAgentCore::Memory", {
-      EventExpiryDuration: 2592000, // 30 日
+      EventExpiryDuration: 30, // 30 日（日数指定。秒ではない）
       MemoryStrategies: Match.arrayWith([
         Match.objectLike({
           SemanticMemoryStrategy: Match.objectLike({
@@ -83,7 +83,7 @@ describe("EvoStack", () => {
       AgentRuntimeArtifact: {
         CodeConfiguration: Match.objectLike({
           EntryPoint: ["index.js"],
-          Runtime: "NODEJS_22",
+          Runtime: "NODE_22",
         }),
       },
     });

@@ -33,7 +33,8 @@ export class MemoryConstruct extends Construct {
     const expiryDays = props.eventExpiryDays ?? 30;
     this.memory = new agentcore.CfnMemory(this, "Memory", {
       name: "evo_chat_memory",
-      eventExpiryDuration: expiryDays * 24 * 60 * 60,
+      // EventExpiryDuration は「日数」指定（1〜365）。秒ではない。
+      eventExpiryDuration: expiryDays,
       memoryExecutionRoleArn: this.executionRole.roleArn,
       memoryStrategies: [
         {

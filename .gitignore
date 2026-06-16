@@ -26,6 +26,10 @@ out/
 cdk.out/
 .cdk.staging/
 
+# playwright
+test-results/
+playwright-report/
+
 # logs
 *.log
 npm-debug.log*

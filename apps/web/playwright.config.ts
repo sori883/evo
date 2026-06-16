@@ -20,7 +20,8 @@ export default defineConfig({
   fullyParallel: false,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    // 空文字（.env.local の `E2E_BASE_URL=`）も未指定扱いにするため `||` を使う
+    baseURL: process.env.E2E_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
   },
   webServer: process.env.E2E_BASE_URL

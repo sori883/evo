@@ -1,0 +1,60 @@
+name: CD (infra deploy)
+
+# AWS OIDC でロールを assume して infra(EvoStack) を東京にデプロイする。
+# 事前準備（docs/deploy.md 参照）:
+#   - AWS 側に GitHub OIDC プロバイダ + デプロイ用 IAM ロール
+#   - GitHub secrets: AWS_DEPLOY_ROLE_ARN, AWS_ACCOUNT_ID
+#   - GitHub variables: BEDROCK_MODEL_ID, AGENT_MANAGED_RUNTIME
+#   - CDK bootstrap 済み / Bedrock モデルアクセス有効化済み
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # GitHub の Environment protection rule で手動承認を必須にすること
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @evo/shared build
+
+      # CodeZip 用に agent を build（infra が dist を Asset 化する）
+      - run: pnpm --filter @evo/agent-chat build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-northeast-1
+
+      - name: CDK deploy
+        working-directory: infra
+        run: pnpm exec cdk deploy --require-approval never --outputs-file cdk-outputs.json
+        env:
+          AWS_REGION: ap-northeast-1
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
+          AGENT_MANAGED_RUNTIME: ${{ vars.AGENT_MANAGED_RUNTIME }}
+
+      - name: Upload stack outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: infra/cdk-outputs.json

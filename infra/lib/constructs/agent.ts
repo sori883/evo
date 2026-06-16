@@ -92,6 +92,10 @@ export class AgentConstruct extends Construct {
         },
       },
       environmentVariables: {
+        // agents/chat の env 検証(env.ts)が AWS_REGION を必須にしている。
+        // managed runtime は AWS_REGION を自動注入しないため明示的に渡す
+        // （未注入だと起動時に parseEnv が throw しコンテナ初期化が失敗する）。
+        AWS_REGION: region,
         BEDROCK_MODEL_ID: props.modelId,
         MEMORY_ID: props.memory.attrMemoryId,
         COGNITO_USER_POOL_ID: props.userPool.userPoolId,

@@ -26,6 +26,12 @@ test.describe("対話エージェント E2E（実 AWS 接続）", () => {
       })
       .not.toBe("…");
     await expect(assistant).not.toBeEmpty();
+
+    // false positive 防止: クライアントは Runtime/通信エラー時に
+    // 「（エラー…）」をこの要素へ描画する。エラー文字列で pass しないよう、
+    // 本物の応答であること（エラープレースホルダを含まない）を検証する。
+    const text = (await assistant.textContent())?.trim() ?? "";
+    expect(text).not.toContain("エラー");
   });
 
   test("未ログインで /chat にアクセスするとログインへ戻る", async ({ page }) => {

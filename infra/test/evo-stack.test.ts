@@ -89,6 +89,20 @@ describe("EvoStack", () => {
     });
   });
 
+  it("Runtime env が AWS_REGION を含む（agent の env 検証と整合）", () => {
+    // agents/chat/src/env.ts は AWS_REGION を必須にしている。
+    // 未注入だと起動時に parseEnv が throw しコンテナ初期化が失敗する。
+    template.hasResourceProperties("AWS::BedrockAgentCore::Runtime", {
+      EnvironmentVariables: Match.objectLike({
+        AWS_REGION: "ap-northeast-1",
+        BEDROCK_MODEL_ID: Match.anyValue(),
+        MEMORY_ID: Match.anyValue(),
+        COGNITO_USER_POOL_ID: Match.anyValue(),
+        COGNITO_CLIENT_ID: Match.anyValue(),
+      }),
+    });
+  });
+
   it("Runtime ロールが confused deputy 対策の信頼ポリシーを持つ", () => {
     template.hasResourceProperties("AWS::IAM::Role", {
       AssumeRolePolicyDocument: Match.objectLike({

@@ -1,0 +1,32 @@
+.DS_Store
+.claude/.env
+*.local.json
+.serena/
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# next.js
+.next/
+out/
+.vercel/
+
+# cdk
+cdk.out/
+.cdk.staging/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*

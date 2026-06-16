@@ -1,0 +1,6 @@
+{
+  "enabledMcpjsonServers": ["linear", "github"],
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "300000"
+  }
+}

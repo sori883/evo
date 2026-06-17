@@ -21,17 +21,17 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       '@strands-agents/sdk':
-        specifier: ^1.5.0
-        version: 1.5.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@3.25.76)
+        specifier: 1.6.0
+        version: 1.6.0(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@4.4.3)
       aws-jwt-verify:
         specifier: ^5.2.1
         version: 5.2.1
       bedrock-agentcore:
         specifier: ^0.2.4
-        version: 0.2.4(@strands-agents/sdk@1.5.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@3.25.76))(playwright@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 0.2.4(@strands-agents/sdk@1.6.0(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@4.4.3))(playwright@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.1.12
+        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.5
@@ -70,8 +70,8 @@ importers:
         specifier: ^19.0.0
         version: 19.2.7(react@19.2.7)
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.1.12
+        version: 4.4.3
     devDependencies:
       '@playwright/test':
         specifier: ^1.49.1
@@ -126,8 +126,8 @@ importers:
   packages/shared:
     dependencies:
       zod:
-        specifier: ^3.25.76
-        version: 3.25.76
+        specifier: ^4.1.12
+        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^22.10.5
@@ -1251,8 +1251,8 @@ packages:
     resolution: {integrity: sha512-dMvQY14daYwEfKR+/ACROrUwJ5onUue7d9o4KJo4gaecn5eVzxlCbSeU9GSh0ojFpIiI1bpnJJxO1wY2VXDEtQ==}
     engines: {node: '>=18.0.0'}
 
-  '@strands-agents/sdk@1.5.0':
-    resolution: {integrity: sha512-DXptD6pwbALLcOEla+f90b41bl+R+QGI1jH1d8axvNSoUbBCCDhq5LS2rM4uZ2zr8qjH/u0+qR3Pt2uzQTLcqw==}
+  '@strands-agents/sdk@1.6.0':
+    resolution: {integrity: sha512-tvmDHkgO7oPe8G0c3bmnTiSetb/Iden4DdSh/maRyLqDZj7uLIeS7whwrk654yM7EOYgo6p0/ewEItMbS+7m+A==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@a2a-js/sdk': ^0.3.10
@@ -1262,6 +1262,8 @@ packages:
       '@aws-sdk/client-bedrock-agent-runtime': ^3.943.0
       '@aws-sdk/client-s3': ^3.943.0
       '@aws/bedrock-token-generator': ^1.1.0
+      '@cedar-policy/cedar-wasm': ^4.0.0
+      '@cedar-policy/mcp-schema-generator-wasm': ^0.6.0
       '@google/genai': ^1.40.0
       '@modelcontextprotocol/sdk': ^1.25.2
       '@opentelemetry/api': ^1.9.0
@@ -1289,6 +1291,10 @@ packages:
       '@aws-sdk/client-s3':
         optional: true
       '@aws/bedrock-token-generator':
+        optional: true
+      '@cedar-policy/cedar-wasm':
+        optional: true
+      '@cedar-policy/mcp-schema-generator-wasm':
         optional: true
       '@google/genai':
         optional: true
@@ -2441,9 +2447,6 @@ packages:
     peerDependencies:
       zod: ^3.25.28 || ^4
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
   zod@4.4.3:
     resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
@@ -3166,7 +3169,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@modelcontextprotocol/sdk@1.29.0(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.29.0(zod@4.4.3)':
     dependencies:
       '@hono/node-server': 1.19.14(hono@4.12.25)
       ajv: 8.20.0
@@ -3183,8 +3186,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.2(zod@3.25.76)
+      zod: 4.4.3
+      zod-to-json-schema: 3.25.2(zod@4.4.3)
     transitivePeerDependencies:
       - supports-color
 
@@ -3410,15 +3413,15 @@ snapshots:
       '@smithy/core': 3.25.0
       tslib: 2.8.1
 
-  '@strands-agents/sdk@1.5.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@3.25.76)':
+  '@strands-agents/sdk@1.6.0(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@4.4.3)':
     dependencies:
       '@aws-sdk/client-bedrock-runtime': 3.1069.0
-      '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.29.0(zod@4.4.3)
       '@opentelemetry/api': 1.9.1
       '@types/json-schema': 7.0.15
       uuid: 14.0.0
       yaml: 2.9.0
-      zod: 3.25.76
+      zod: 4.4.3
     optionalDependencies:
       '@smithy/types': 4.15.0
       express: 5.2.1
@@ -3545,7 +3548,7 @@ snapshots:
 
   aws-jwt-verify@5.2.1: {}
 
-  bedrock-agentcore@0.2.4(@strands-agents/sdk@1.5.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@3.25.76))(playwright@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  bedrock-agentcore@0.2.4(@strands-agents/sdk@1.6.0(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@4.4.3))(playwright@1.61.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       '@aws-crypto/sha256-js': 5.2.0
       '@aws-sdk/client-bedrock-agentcore': 3.1069.0
@@ -3563,7 +3566,7 @@ snapshots:
       ws: 8.21.0
       zod: 4.4.3
     optionalDependencies:
-      '@strands-agents/sdk': 1.5.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@3.25.76)
+      '@strands-agents/sdk': 1.6.0(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(@opentelemetry/api@1.9.1)(@smithy/types@4.15.0)(express@5.2.1)(zod@4.4.3)
       playwright: 1.61.0
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
@@ -4611,10 +4614,8 @@ snapshots:
 
   yn@3.1.1: {}
 
-  zod-to-json-schema@3.25.2(zod@3.25.76):
+  zod-to-json-schema@3.25.2(zod@4.4.3):
     dependencies:
-      zod: 3.25.76
-
-  zod@3.25.76: {}
+      zod: 4.4.3
 
   zod@4.4.3: {}

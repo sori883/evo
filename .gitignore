@@ -34,3 +34,6 @@ playwright-report/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# pnpm deploy 出力（CodeZip 生成物）
+agents/chat/deploy/

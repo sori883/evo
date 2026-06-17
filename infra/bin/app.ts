@@ -16,6 +16,6 @@ new EvoStack(app, "EvoStack", {
   agentRuntimeName: process.env.AGENT_RUNTIME_NAME ?? "evo_chat",
   // CfnRuntime の Runtime enum は NODE_22（NODEJS_22 ではない）
   managedRuntime: process.env.AGENT_MANAGED_RUNTIME ?? "NODE_22",
-  // agents/chat のビルド成果物(dist)を CodeZip 化する
-  agentCodePath: path.join(__dirname, "..", "..", "agents", "chat", "dist"),
+  // `pnpm deploy` 生成の自己完結パッケージ(dist + node_modules)を CodeZip 化する
+  agentCodePath: path.join(__dirname, "..", "..", "agents", "chat", "deploy"),
 });

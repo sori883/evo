@@ -34,6 +34,10 @@ export class AgentConstruct extends Construct {
 
     const { region, account } = Stack.of(this);
 
+    // codePath は `pnpm deploy --config.node-linker=hoisted` 生成の自己完結
+    // パッケージ（dist + フラットな実体 node_modules）。symlink を含まない
+    // 前提なので followSymlinks は既定のまま（ALWAYS は pnpm の循環 symlink で
+    // 無限ループになるため使わない。node_modules/.bin は deploy 後に除去する）。
     const asset = new Asset(this, "Code", { path: props.codePath });
 
     this.executionRole = new iam.Role(this, "RuntimeRole", {
@@ -81,7 +85,8 @@ export class AgentConstruct extends Construct {
       agentRuntimeArtifact: {
         codeConfiguration: {
           code: { s3: { bucket: asset.s3BucketName, prefix: asset.s3ObjectKey } },
-          entryPoint: ["index.js"],
+          // pnpm deploy 出力では dist/index.js が entry（zip 内パスと一致させる）
+          entryPoint: ["dist/index.js"],
           runtime: props.managedRuntime,
         },
       },

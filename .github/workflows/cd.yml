@@ -35,8 +35,12 @@ jobs:
 
       - run: pnpm --filter @evo/shared build
 
-      # CodeZip 用に agent を build（infra が dist を Asset 化する）
-      - run: pnpm --filter @evo/agent-chat build
+      # CodeZip(node_modules 同梱方式) を組み立てる（infra が agents/chat/deploy を Asset 化）。
+      - name: Package agent (CodeZip)
+        run: |
+          pnpm --filter @evo/agent-chat build
+          pnpm --filter @evo/agent-chat --config.node-linker=hoisted deploy --prod --legacy agents/chat/deploy
+          rm -rf agents/chat/deploy/node_modules/.bin
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

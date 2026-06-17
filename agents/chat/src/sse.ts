@@ -1,9 +1,17 @@
 import type { AgentStreamEvent } from "@evo/shared";
 
-/** Strands のストリームイベント（必要な部分のみ緩く型付け）。 */
+/**
+ * Strands(@strands-agents/sdk v1.6) の stream イベント（必要部分のみ緩く型付け）。
+ * agent.stream() はトップレベルに hook event を yield する。テキスト差分は
+ * `modelStreamUpdateEvent` の内側 `event`(ModelContentBlockDeltaEvent) の
+ * `delta`(TextDelta) に入る。
+ */
 type StrandsStreamEvent = {
   type?: string;
-  delta?: { type?: string; text?: string };
+  event?: {
+    type?: string;
+    delta?: { type?: string; text?: string };
+  };
 };
 
 /** delta イベントのみを表す型（agentStreamEvent の delta メンバ）。 */
@@ -16,12 +24,16 @@ type DeltaEvent = Extract<AgentStreamEvent, { type: "delta" }>;
 export function toAgentStreamEvent(
   event: StrandsStreamEvent,
 ): DeltaEvent | null {
+  if (event.type !== "modelStreamUpdateEvent") {
+    return null;
+  }
+  const inner = event.event;
   if (
-    event.type === "modelContentBlockDeltaEvent" &&
-    event.delta?.type === "textDelta" &&
-    typeof event.delta.text === "string"
+    inner?.type === "modelContentBlockDeltaEvent" &&
+    inner.delta?.type === "textDelta" &&
+    typeof inner.delta.text === "string"
   ) {
-    return { type: "delta", text: event.delta.text };
+    return { type: "delta", text: inner.delta.text };
   }
   return null;
 }

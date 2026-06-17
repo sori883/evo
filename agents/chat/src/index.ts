@@ -42,7 +42,10 @@ const app = new BedrockAgentCoreApp({
       }
 
       // 4. 会話を記憶に保存して完了通知
-      await memory.save(actorId, input.sessionId, input.prompt, assistant);
+      //    CreateEvent は空テキストを拒否するため、応答が空なら保存しない。
+      if (assistant.length > 0) {
+        await memory.save(actorId, input.sessionId, input.prompt, assistant);
+      }
       const done: AgentStreamEvent = {
         type: "done",
         sessionId: input.sessionId,

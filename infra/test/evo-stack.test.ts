@@ -119,6 +119,31 @@ describe("EvoStack", () => {
     });
   });
 
+  it("Runtime が Authorization ヘッダをコンテナへ転送する allowlist を持つ", () => {
+    // customJwtAuthorizer は検証のみ。allowlist に入れないと AgentCore は
+    // Authorization をコンテナへ転送せず、agent が sub を取得できない。
+    template.hasResourceProperties("AWS::BedrockAgentCore::Runtime", {
+      RequestHeaderConfiguration: {
+        RequestHeaderAllowlist: Match.arrayWith(["Authorization"]),
+      },
+    });
+  });
+
+  it("実行ロールが CloudWatch Logs 権限を持つ（観測性）", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith([
+              "logs:CreateLogStream",
+              "logs:PutLogEvents",
+            ]),
+          }),
+        ]),
+      }),
+    });
+  });
+
   it("実行ロールが AgentCore Memory データプレーン権限を持つ", () => {
     template.hasResourceProperties("AWS::IAM::Policy", {
       PolicyDocument: Match.objectLike({

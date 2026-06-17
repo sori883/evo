@@ -6,6 +6,34 @@ import { parseSseEvents } from "@/lib/sse-parse";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+// 履歴読込中のスケルトン。メッセージ領域と同じバブル構造で場所を占有し、
+// 読込→表示の切替で高さが変動しない（レイアウトのガタつき防止）。
+const SKELETON_ROWS: Array<{ side: "left" | "right"; width: string }> = [
+  { side: "right", width: "w-40" },
+  { side: "left", width: "w-64" },
+  { side: "right", width: "w-28" },
+  { side: "left", width: "w-72" },
+];
+
+function HistorySkeleton() {
+  return (
+    <ul className="space-y-4" aria-hidden>
+      {SKELETON_ROWS.map((row, i) => (
+        <li
+          key={i}
+          className={row.side === "right" ? "flex justify-end" : "flex justify-start"}
+        >
+          <div
+            className={`h-10 max-w-[80%] ${row.width} animate-pulse rounded-2xl ${
+              row.side === "right" ? "bg-accent/30" : "bg-surface"
+            }`}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function ChatView() {
   const router = useRouter();
   const params = useSearchParams();
@@ -118,10 +146,9 @@ function ChatView() {
 
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-4 py-6">
-          {loadingHistory && (
-            <p className="py-10 text-center text-sm text-muted">履歴を読み込み中…</p>
-          )}
-          {empty && (
+          {loadingHistory ? (
+            <HistorySkeleton />
+          ) : empty ? (
             <div className="grid place-items-center py-24 text-center">
               <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-accent/15 text-xl font-bold text-accent">
                 e
@@ -131,33 +158,34 @@ function ChatView() {
                 メッセージを送ると AgentCore が応答します。
               </p>
             </div>
-          )}
-          <ul className="space-y-4">
-            {messages.map((m, i) => {
-              const streaming =
-                busy && i === messages.length - 1 && m.role === "assistant";
-              return (
-                <li
-                  key={i}
-                  className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
-                >
-                  <div
-                    data-testid={m.role === "assistant" ? "assistant-msg" : "user-msg"}
-                    className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-accent text-accent-fg"
-                        : "bg-surface text-fg"
-                    } ${streaming && m.content.length === 0 ? "evo-caret" : ""}`}
+          ) : (
+            <ul className="space-y-4">
+              {messages.map((m, i) => {
+                const streaming =
+                  busy && i === messages.length - 1 && m.role === "assistant";
+                return (
+                  <li
+                    key={i}
+                    className={m.role === "user" ? "flex justify-end" : "flex justify-start"}
                   >
-                    {m.content || (m.role === "assistant" && !streaming ? "…" : "")}
-                    {streaming && m.content.length > 0 ? (
-                      <span className="evo-caret" />
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                    <div
+                      data-testid={m.role === "assistant" ? "assistant-msg" : "user-msg"}
+                      className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${
+                        m.role === "user"
+                          ? "bg-accent text-accent-fg"
+                          : "bg-surface text-fg"
+                      } ${streaming && m.content.length === 0 ? "evo-caret" : ""}`}
+                    >
+                      {m.content || (m.role === "assistant" && !streaming ? "…" : "")}
+                      {streaming && m.content.length > 0 ? (
+                        <span className="evo-caret" />
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
 

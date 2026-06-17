@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+/* evo ダークテーマ。Tailwind v4 の @theme でトークン化する。 */
+@theme {
+  --color-bg: #0b0b0f;
+  --color-surface: #16161c;
+  --color-surface-2: #1d1d26;
+  --color-border: #2a2a35;
+  --color-fg: #e8e8ea;
+  --color-muted: #9a9aa8;
+  --color-accent: #5b8cff;
+  --color-accent-fg: #ffffff;
+  --color-danger: #ff6b6b;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+/* スクロールバーを控えめに */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* ストリーミング中のキャレット点滅 */
+@keyframes evo-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+.evo-caret::after {
+  content: "▍";
+  margin-left: 1px;
+  animation: evo-blink 1s steps(1) infinite;
+  color: var(--color-muted);
+}

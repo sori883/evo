@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { type UserClaims, decodeClaims } from "./claims";
 import type { AuthTokens } from "./cognito";
 
 // httpOnly cookie 名。localhost(http) でも動くよう secure は本番のみ。
@@ -35,6 +36,17 @@ export async function getAccessToken(): Promise<string | undefined> {
 export async function getRefreshToken(): Promise<string | undefined> {
   const store = await cookies();
   return store.get(REFRESH)?.value;
+}
+
+/** id token を取り出す（クレーム表示・actorId 取得用）。 */
+export async function getIdToken(): Promise<string | undefined> {
+  const store = await cookies();
+  return store.get(ID)?.value;
+}
+
+/** ログイン中ユーザーのクレーム（sub/email）。未ログインなら null。 */
+export async function getCurrentUser(): Promise<UserClaims | null> {
+  return decodeClaims(await getIdToken());
 }
 
 /** ログアウト時にセッション cookie を削除する。 */

@@ -13,5 +13,5 @@ export function middleware(req: NextRequest): NextResponse {
 }
 
 export const config = {
-  matcher: ["/chat", "/chat/:path*"],
+  matcher: ["/chat", "/chat/:path*", "/account", "/account/:path*"],
 };

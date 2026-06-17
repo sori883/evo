@@ -129,6 +129,35 @@ describe("EvoStack", () => {
     });
   });
 
+  it("Runtime ロールの InvokeModel が推論プロファイル/FM に限定される（* でない）", () => {
+    // modelId="jp.anthropic.claude-test-v1:0" → FM base は "anthropic.claude-test-v1:0"
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith(["bedrock:InvokeModel"]),
+            Resource: Match.arrayWith([
+              "arn:aws:bedrock:ap-northeast-1:123456789012:inference-profile/jp.anthropic.claude-test-v1:0",
+              "arn:aws:bedrock:*::foundation-model/anthropic.claude-test-v1:0",
+            ]),
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("Runtime ロールが X-Ray/メトリクス権限を持つ（可観測性）", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith(["xray:PutTraceSegments"]),
+          }),
+        ]),
+      }),
+    });
+  });
+
   it("実行ロールが CloudWatch Logs 権限を持つ（観測性）", () => {
     template.hasResourceProperties("AWS::IAM::Policy", {
       PolicyDocument: Match.objectLike({

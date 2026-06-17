@@ -67,6 +67,17 @@ E2E は CI ではなく**ローカルで実行**する（下記 5）。専用ロ
 認証情報に Cognito 管理（`cognito-idp:AdminCreateUser` / `AdminSetUserPassword`）と
 AgentCore 呼び出し権限があればよい。
 
+### 2.5 ローカル診断用の最小権限（推奨）
+ログ調査・Memory 確認・runtime invoke などローカル診断に `AdministratorAccess` を使うのは
+広すぎる。以下に絞った permission set/ロールの利用を推奨（SSO の短命クレデンシャルを使い、
+長期 IAM アクセスキーは使わない）:
+- CloudWatch Logs 読取: `logs:Describe*` / `logs:GetLogEvents` / `logs:FilterLogEvents`
+- AgentCore（読取 + invoke）: `bedrock-agentcore:List*` / `Get*` / `RetrieveMemoryRecords` /
+  `InvokeAgentRuntime`、`bedrock-agentcore-control:GetAgentRuntime`
+- E2E ユーザー操作: `cognito-idp:AdminCreateUser` / `AdminSetUserPassword` / `AdminGetUser` /
+  `InitiateAuth`
+- 推論プロファイル確認: `bedrock:ListInferenceProfiles` / `GetInferenceProfile`
+
 ---
 
 ## 3. GitHub secrets / variables
@@ -141,8 +152,24 @@ pnpm --filter @evo/web e2e
 ## 6. Web（Vercel）
 
 `apps/web` は Vercel にデプロイ（CDK 対象外）。Vercel の GitHub 連携で自動デプロイ、
-または `vercel` CLI。環境変数（Project Settings）に
-`AWS_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `AGENT_RUNTIME_URL` を設定。
-BFF(`/api/chat`, `/api/auth/*`) はサーバ実行のため、Cognito 呼び出し用の AWS 認証情報も
-Vercel 環境に必要（IAM ユーザーのアクセスキー、最小権限: `cognito-idp:SignUp` /
-`ConfirmSignUp` / `InitiateAuth`）。
+または `vercel` CLI。
+
+### 環境変数（Project Settings）
+`AWS_REGION` / `COGNITO_USER_POOL_ID` / `COGNITO_CLIENT_ID` / `AGENT_RUNTIME_URL` /
+`MEMORY_ID`（チャット履歴を AgentCore Memory から引くため。CDK 出力 MemoryId）。
+
+### BFF に必要な AWS 権限（IAM ユーザーのアクセスキーを Vercel に設定）
+BFF（`/api/chat`, `/api/auth/*`, `/api/history*`）はサーバ実行のため AWS 認証情報が要る。最小権限:
+
+- 認証（Cognito、public API）: `cognito-idp:SignUp` / `ConfirmSignUp` / `InitiateAuth`
+  （`InitiateAuth` は USER_PASSWORD_AUTH のログインと REFRESH_TOKEN_AUTH の再発行の両方をカバー）。
+- チャット履歴（AgentCore Memory データプレーン、Resource は対象 Memory ARN に限定）:
+  `bedrock-agentcore:ListSessions` / `ListEvents`。
+
+### cookie / CSRF（本番の挙動）
+- 本番（`NODE_ENV=production`、https）ではセッション cookie 名が `__Host-` プレフィックス付き
+  （`Secure` / `Path=/` / `Domain` 無し）になる。Vercel は https のため自動的に有効。
+  **本番初回デプロイ時、旧 cookie 名のセッションは読めず再ログインが必要。**
+- 変更系 Route Handler は Origin/Host 同一オリジン検証（CSRF 対策）。同一オリジンの
+  ブラウザ fetch は Origin を送るため通常利用に影響なし。
+- access token は失効/失効間近で refresh token により自動再発行される（`/api/chat`）。

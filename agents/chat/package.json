@@ -14,10 +14,10 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-agentcore": "^3.1069.0",
     "@evo/shared": "workspace:*",
-    "@strands-agents/sdk": "^1.5.0",
+    "@strands-agents/sdk": "1.6.0",
     "aws-jwt-verify": "^5.2.1",
     "bedrock-agentcore": "^0.2.4",
-    "zod": "^3.25.76"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

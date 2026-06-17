@@ -82,7 +82,7 @@ describe("EvoStack", () => {
       NetworkConfiguration: { NetworkMode: "PUBLIC" },
       AgentRuntimeArtifact: {
         CodeConfiguration: Match.objectLike({
-          EntryPoint: ["index.js"],
+          EntryPoint: ["dist/index.js"],
           Runtime: "NODE_22",
         }),
       },

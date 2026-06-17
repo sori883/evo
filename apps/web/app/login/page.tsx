@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type Mode = "login" | "signup" | "confirm";
 
@@ -58,7 +59,10 @@ export default function LoginPage() {
     "w-full rounded-lg border border-border bg-surface-2 px-3.5 py-2.5 text-[15px] outline-none placeholder:text-muted focus:border-accent";
 
   return (
-    <main className="grid min-h-dvh place-items-center px-4">
+    <main className="relative grid min-h-dvh place-items-center px-4">
+      <div className="absolute right-3 top-3">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center text-center">
           <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-accent text-xl font-bold text-accent-fg">

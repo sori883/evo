@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ThemeToggle } from "./theme-toggle";
 
 type SessionItem = {
   sessionId: string;
@@ -98,6 +99,7 @@ export function Sidebar({ email }: { email: string }) {
       </nav>
 
       <div className="border-t border-border p-3">
+        <ThemeToggle className="mb-1 w-full" />
         <Link
           href="/account"
           className={`flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-surface-2 ${

@@ -7,6 +7,8 @@ const schema = z.object({
   COGNITO_USER_POOL_ID: z.string().min(1),
   COGNITO_CLIENT_ID: z.string().min(1),
   AGENT_RUNTIME_URL: z.string().url(),
+  /** チャット履歴を AgentCore Memory から引くための memoryId。 */
+  MEMORY_ID: z.string().min(1),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

@@ -17,6 +17,12 @@ async function postAuth(action: string, body: unknown): Promise<void> {
   }
 }
 
+const TITLE: Record<Mode, string> = {
+  login: "ログイン",
+  signup: "アカウント作成",
+  confirm: "メール確認",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
@@ -48,87 +54,95 @@ export default function LoginPage() {
     }
   }
 
+  const inputClass =
+    "w-full rounded-lg border border-border bg-surface-2 px-3.5 py-2.5 text-[15px] outline-none placeholder:text-muted focus:border-accent";
+
   return (
-    <main style={{ maxWidth: 360, margin: "80px auto", padding: 16 }}>
-      <h1 style={{ fontSize: 20 }}>
-        {mode === "login" ? "ログイン" : mode === "signup" ? "サインアップ" : "メール確認"}
-      </h1>
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        {mode !== "confirm" && (
+    <main className="grid min-h-dvh place-items-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="mb-3 grid size-12 place-items-center rounded-2xl bg-accent text-xl font-bold text-accent-fg">
+            e
+          </span>
+          <h1 className="text-xl font-semibold">{TITLE[mode]}</h1>
+          <p className="mt-1 text-sm text-muted">evo chat へようこそ</p>
+        </div>
+
+        <form
+          onSubmit={onSubmit}
+          className="space-y-3 rounded-2xl border border-border bg-surface p-5"
+        >
           <input
-            type="password"
-            placeholder="パスワード（8文字以上）"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            type="email"
+            placeholder="メールアドレス"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
-            style={inputStyle}
+            className={inputClass}
           />
-        )}
-        {mode === "confirm" && (
-          <input
-            type="text"
-            placeholder="確認コード"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            required
-            style={inputStyle}
-          />
-        )}
-        {error && <p style={{ color: "#ff6b6b", fontSize: 13 }}>{error}</p>}
-        <button type="submit" disabled={loading} style={buttonStyle}>
-          {loading
-            ? "処理中…"
-            : mode === "login"
-              ? "ログイン"
-              : mode === "signup"
-                ? "登録"
-                : "確認"}
-        </button>
-      </form>
-      <div style={{ marginTop: 16, fontSize: 13 }}>
-        {mode === "login" ? (
-          <button onClick={() => setMode("signup")} style={linkStyle}>
-            アカウントを作成
+          {mode !== "confirm" && (
+            <input
+              type="password"
+              placeholder="パスワード（8文字以上）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={inputClass}
+            />
+          )}
+          {mode === "confirm" && (
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="確認コード"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              className={inputClass}
+            />
+          )}
+          {error && <p className="text-sm text-danger">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-accent px-3.5 py-2.5 text-[15px] font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {loading
+              ? "処理中…"
+              : mode === "login"
+                ? "ログイン"
+                : mode === "signup"
+                  ? "登録する"
+                  : "確認する"}
           </button>
-        ) : (
-          <button onClick={() => setMode("login")} style={linkStyle}>
-            ログインへ戻る
-          </button>
-        )}
+        </form>
+
+        <div className="mt-4 text-center text-sm text-muted">
+          {mode === "login" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("signup");
+                setError("");
+              }}
+              className="text-accent hover:underline"
+            >
+              アカウントを作成
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("login");
+                setError("");
+              }}
+              className="text-accent hover:underline"
+            >
+              ログインへ戻る
+            </button>
+          )}
+        </div>
       </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: 8,
-  border: "1px solid #333",
-  background: "#16161c",
-  color: "#e8e8ea",
-};
-
-const buttonStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  borderRadius: 8,
-  border: "none",
-  background: "#5b8cff",
-  color: "#fff",
-  cursor: "pointer",
-};
-
-const linkStyle: React.CSSProperties = {
-  background: "none",
-  border: "none",
-  color: "#5b8cff",
-  cursor: "pointer",
-  padding: 0,
-};

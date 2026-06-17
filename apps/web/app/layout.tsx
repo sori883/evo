@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata = {
   title: "evo chat",
@@ -12,16 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body
-        style={{
-          fontFamily: "system-ui, sans-serif",
-          margin: 0,
-          background: "#0b0b0f",
-          color: "#e8e8ea",
-        }}
-      >
-        {children}
-      </body>
+      <body className="min-h-dvh bg-bg text-fg antialiased">{children}</body>
     </html>
   );
 }

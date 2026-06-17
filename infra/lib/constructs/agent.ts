@@ -70,6 +70,27 @@ export class AgentConstruct extends Construct {
         resources: [props.memory.attrMemoryArn],
       }),
     );
+    // CloudWatch Logs（ロググループはプラットフォームが初回 invoke 時に自動作成。
+    // この権限が無いと作成されずコンテナログが一切出ない＝観測性ゼロになる）
+    this.executionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+        ],
+        resources: [
+          `arn:aws:logs:${region}:${account}:log-group:/aws/bedrock-agentcore/runtimes/*`,
+        ],
+      }),
+    );
+    this.executionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["logs:DescribeLogGroups"],
+        resources: [`arn:aws:logs:${region}:${account}:log-group:*`],
+      }),
+    );
     // 将来の共有データ参照
     props.table.grantReadData(this.executionRole);
     // CodeZip(S3 asset) の読み取り
@@ -95,6 +116,11 @@ export class AgentConstruct extends Construct {
           discoveryUrl,
           allowedClients: [props.userPoolClient.userPoolClientId],
         },
+      },
+      // customJwtAuthorizer は検証のみ。Authorization をコンテナへ転送するには
+      // allowlist への明示追加が必要（agent が JWT から sub=actorId を取り出す）。
+      requestHeaderConfiguration: {
+        requestHeaderAllowlist: ["Authorization"],
       },
       environmentVariables: {
         // agents/chat の env 検証(env.ts)が AWS_REGION を必須にしている。

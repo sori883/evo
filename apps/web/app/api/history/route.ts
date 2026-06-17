@@ -15,15 +15,15 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const reader = new MemoryReader();
-    const sessions = await reader.listSessions(user.sub, 30);
+    const sessions = await reader.listSessions(user.sub, 20);
     const enriched = await Promise.all(
-      sessions.slice(0, 20).map(async (s) => {
+      sessions.map(async (s) => {
         const events = await reader
           .listEvents(user.sub, s.sessionId, 4)
           .catch(() => []);
         return {
           sessionId: s.sessionId,
-          updatedAt: s.updatedAt,
+          createdAt: s.createdAt,
           title: deriveSessionTitle(eventsToMessages(events)),
         };
       }),

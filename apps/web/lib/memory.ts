@@ -8,8 +8,8 @@ import type { MemoryEvent } from "./history";
 
 export type SessionSummary = {
   sessionId: string;
-  /** 最終更新時刻（ISO 文字列、無ければ空）。 */
-  updatedAt: string;
+  /** 作成時刻（ISO 文字列、無ければ空）。新しい順に並べる基準。 */
+  createdAt: string;
 };
 
 /**
@@ -36,12 +36,15 @@ export class MemoryReader {
         maxResults: max,
       }),
     );
-    const summaries = (res.sessionSummaries ?? []).map((s) => ({
-      sessionId: s.sessionId ?? "",
-      updatedAt:
-        s.createdAt instanceof Date ? s.createdAt.toISOString() : "",
-    }));
-    return summaries.filter((s) => s.sessionId.length > 0);
+    const summaries = (res.sessionSummaries ?? [])
+      .map((s) => ({
+        sessionId: s.sessionId ?? "",
+        createdAt: s.createdAt instanceof Date ? s.createdAt.toISOString() : "",
+      }))
+      .filter((s) => s.sessionId.length > 0);
+    // API のデフォルト順序に依存せず、作成時刻の新しい順に明示ソートする。
+    summaries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return summaries;
   }
 
   /** あるセッションの会話イベント（古い→新しい順）。 */

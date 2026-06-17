@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 type SessionItem = {
   sessionId: string;
   title: string;
-  updatedAt: string;
+  createdAt: string;
 };
 
 /** 認証済みエリアのサイドバー。会話履歴・ナビ・アカウント・ログアウト。 */

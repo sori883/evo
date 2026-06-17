@@ -1,3 +1,4 @@
+import { Stack } from "aws-cdk-lib";
 import * as agentcore from "aws-cdk-lib/aws-bedrockagentcore";
 import * as iam from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
@@ -19,14 +20,21 @@ export class MemoryConstruct extends Construct {
   constructor(scope: Construct, id: string, props: MemoryConstructProps = {}) {
     super(scope, id);
 
+    const { region, account } = Stack.of(this);
+
     this.executionRole = new iam.Role(this, "MemoryRole", {
       assumedBy: new iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
     });
-    // 長期記憶の抽出に使う Bedrock 呼び出し権限
+    // 長期記憶の抽出に使う Bedrock 呼び出し権限。抽出に使うモデルは Memory
+    // サービス側が決めるため特定 ID には絞れないが、リソースを bedrock の
+    // モデル系（推論プロファイル / foundation-model）に限定し全リソース * を廃する。
     this.executionRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["bedrock:InvokeModel"],
-        resources: ["*"],
+        resources: [
+          `arn:aws:bedrock:*:${account}:inference-profile/*`,
+          `arn:aws:bedrock:*::foundation-model/*`,
+        ],
       }),
     );
 

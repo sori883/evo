@@ -51,11 +51,21 @@ export class AgentConstruct extends Construct {
       }),
     });
 
-    // Bedrock モデル呼び出し（推論プロファイル + foundation-model）
+    // Bedrock モデル呼び出しを BEDROCK_MODEL_ID に限定する。
+    // クロスリージョン推論プロファイル(jp.*)経由の InvokeModel は、
+    // プロファイル ARN と、ルーティング先各リージョンの foundation-model ARN の
+    // 双方に権限が要る。FM の id は geo prefix(jp. 等)を除いたもの。
+    const modelSegments = props.modelId.split(".");
+    const baseModelId =
+      modelSegments.length >= 3 ? modelSegments.slice(1).join(".") : props.modelId;
     this.executionRole.addToPolicy(
       new iam.PolicyStatement({
         actions: ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-        resources: ["*"],
+        resources: [
+          `arn:aws:bedrock:${region}:${account}:inference-profile/${props.modelId}`,
+          // region ワイルドカードでプロファイルのルーティング先(ap-northeast-1/3 等)を許可
+          `arn:aws:bedrock:*::foundation-model/${baseModelId}`,
+        ],
       }),
     );
     // AgentCore Memory データプレーン
@@ -89,6 +99,28 @@ export class AgentConstruct extends Construct {
       new iam.PolicyStatement({
         actions: ["logs:DescribeLogGroups"],
         resources: [`arn:aws:logs:${region}:${account}:log-group:*`],
+      }),
+    );
+    // 可観測性: X-Ray トレースと CloudWatch メトリクス（GenAI observability）。
+    // これらの API はリソースレベル制御に非対応のため Resource は "*"。
+    this.executionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+        ],
+        resources: ["*"],
+      }),
+    );
+    this.executionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["cloudwatch:PutMetricData"],
+        resources: ["*"],
+        conditions: {
+          StringEquals: { "cloudwatch:namespace": "bedrock-agentcore" },
+        },
       }),
     );
     // 将来の共有データ参照

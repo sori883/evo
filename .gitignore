@@ -37,3 +37,4 @@ pnpm-debug.log*
 
 # pnpm deploy 出力（CodeZip 生成物）
 agents/chat/deploy/
+agents/report/deploy/

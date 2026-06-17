@@ -173,13 +173,16 @@ function ChatView() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              // IME 変換中（日本語変換の確定 Enter など）は何もしない＝誤送信防止。
+              if (e.nativeEvent.isComposing) return;
+              // 送信は Cmd+Enter / Alt+Enter のみ。Enter 単体は既定の改行。
+              if (e.key === "Enter" && (e.metaKey || e.altKey)) {
                 e.preventDefault();
                 void submit();
               }
             }}
             rows={1}
-            placeholder="メッセージを入力"
+            placeholder="メッセージを入力（⌘+Enter で送信）"
             className="max-h-40 min-h-[44px] flex-1 resize-none rounded-xl border border-border bg-surface px-4 py-3 text-[15px] outline-none placeholder:text-muted focus:border-accent"
           />
           <button
@@ -191,6 +194,9 @@ function ChatView() {
             {busy ? "…" : "↑"}
           </button>
         </form>
+        <p className="mx-auto mt-1.5 w-full max-w-3xl px-1 text-xs text-muted">
+          Enter で改行 / ⌘+Enter（または Alt+Enter）で送信
+        </p>
       </div>
     </>
   );

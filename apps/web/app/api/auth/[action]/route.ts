@@ -1,12 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { confirmSchema, signInSchema, signUpSchema } from "@/lib/auth-schema";
 import { createCognitoService } from "@/lib/cognito-service";
+import { isSameOrigin } from "@/lib/csrf";
 import { clearSession, setSession } from "@/lib/session";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ action: string }> },
 ): Promise<NextResponse> {
+  // CSRF: 同一オリジンからの呼び出しのみ許可する。
+  if (!isSameOrigin(req.headers)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { action } = await params;
 
   try {

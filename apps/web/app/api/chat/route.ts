@@ -1,14 +1,21 @@
 import type { NextRequest } from "next/server";
 import { invokeRequestSchema } from "@evo/shared";
+import { isSameOrigin } from "@/lib/csrf";
 import { serverEnv } from "@/lib/env";
-import { getAccessToken } from "@/lib/session";
+import { getValidAccessToken } from "@/lib/session";
 
 /**
  * BFF: cookie の access token を Bearer に載せ替えて AgentCore Runtime を
  * HTTPS で直叩きし、SSE をそのままクライアントへ pass-through する。
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  const token = await getAccessToken();
+  // CSRF: 同一オリジンからの呼び出しのみ許可する。
+  if (!isSameOrigin(req.headers)) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  // 失効/失効間近なら refresh token で再発行してから使う。
+  const token = await getValidAccessToken(Date.now());
   if (!token) {
     return new Response("Unauthorized", { status: 401 });
   }

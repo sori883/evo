@@ -1,33 +1,46 @@
 import { describe, it, expect } from "vitest";
-import { reportLabel, toReportList } from "./reports.js";
+import { parseKind, reportLabel, toReportList } from "./reports.js";
+
+describe("parseKind", () => {
+  it("プレフィックスから種別を判定", () => {
+    expect(parseKind("config-latest.md")).toBe("config");
+    expect(parseKind("operations-2026-06-18T010259Z.md")).toBe("operations");
+    expect(parseKind("legacy.md")).toBeNull();
+  });
+});
 
 describe("reportLabel", () => {
   it("latest は『最新』", () => {
-    expect(reportLabel("latest.md")).toBe("最新");
+    expect(reportLabel("config-latest.md")).toBe("最新");
   });
   it("タイムスタンプ名を日時に整形", () => {
-    expect(reportLabel("2026-06-18T010259Z.md")).toBe("2026-06-18 01:02:59 UTC");
-  });
-  it("想定外名は拡張子を落とすだけ", () => {
-    expect(reportLabel("memo.md")).toBe("memo");
+    expect(reportLabel("operations-2026-06-18T010259Z.md")).toBe(
+      "2026-06-18 01:02:59 UTC",
+    );
   });
 });
 
 describe("toReportList", () => {
-  it("latest を先頭、履歴は新しい順", () => {
+  it("種別ごとに latest 先頭・新しい順、種別不明は除外", () => {
     const list = toReportList([
-      { key: "reports/2026-06-18T010000Z.md", lastModified: "2026-06-18T01:00:00Z" },
-      { key: "reports/latest.md", lastModified: "2026-06-18T02:00:00Z" },
-      { key: "reports/2026-06-18T020000Z.md", lastModified: "2026-06-18T02:00:00Z" },
+      { key: "reports/config-2026-06-18T010000Z.md" },
+      { key: "reports/config-latest.md" },
+      { key: "reports/operations-2026-06-18T010000Z.md" },
+      { key: "reports/operations-2026-06-18T020000Z.md" },
+      { key: "reports/operations-latest.md" },
+      { key: "reports/latest.md" }, // 旧統合 → 除外
     ]);
-    expect(list.map((r) => r.name)).toEqual([
-      "latest.md",
-      "2026-06-18T020000Z.md",
-      "2026-06-18T010000Z.md",
+    // 旧統合(latest.md)は除外される
+    expect(list.some((r) => r.name === "latest.md")).toBe(false);
+    // 種別ごとに latest 先頭・以降は日時降順
+    expect(list.filter((r) => r.kind === "config").map((r) => r.name)).toEqual([
+      "config-latest.md",
+      "config-2026-06-18T010000Z.md",
     ]);
-    expect(list[0]?.label).toBe("最新");
-  });
-  it(".md 以外は除外", () => {
-    expect(toReportList([{ key: "reports/x.txt" }])).toEqual([]);
+    expect(list.filter((r) => r.kind === "operations").map((r) => r.name)).toEqual([
+      "operations-latest.md",
+      "operations-2026-06-18T020000Z.md",
+      "operations-2026-06-18T010000Z.md",
+    ]);
   });
 });

@@ -5,7 +5,12 @@ import { BedrockAgentCoreApp } from "bedrock-agentcore/runtime";
 import { createReportAgent } from "./agent.js";
 import { loadEnv } from "./env.js";
 import { OverlayReader } from "./overlay.js";
-import { buildReportPrompt, renderMarkdown, reportSchema } from "./report.js";
+import {
+  buildReportPrompt,
+  renderConfigMarkdown,
+  renderOperationsMarkdown,
+  reportSchema,
+} from "./report.js";
 import { saveReport } from "./storage.js";
 
 const env = loadEnv();
@@ -30,24 +35,30 @@ const app = new BedrockAgentCoreApp({
       const report = reportSchema.parse(result.structuredOutput);
 
       const generatedAt = new Date().toISOString();
-      const markdown = renderMarkdown(report, {
-        systemName: "evo",
-        generatedAt,
-        appliedOverlay: overlay,
-      });
-      const saved = await saveReport(
+      const meta = { systemName: "evo", generatedAt, appliedOverlay: overlay };
+      const configMd = renderConfigMarkdown(report, meta);
+      const operationsMd = renderOperationsMarkdown(report, meta);
+
+      const configSaved = await saveReport(
         s3,
         env.REPORTS_BUCKET,
-        markdown,
+        "config",
+        configMd,
+        generatedAt,
+      );
+      const opsSaved = await saveReport(
+        s3,
+        env.REPORTS_BUCKET,
+        "operations",
+        operationsMd,
         generatedAt,
       );
 
       return {
         ok: true,
-        key: saved.key,
-        latestKey: saved.latestKey,
-        bytes: markdown.length,
-        resources: report.resources.length,
+        config: configSaved.key,
+        operations: opsSaved.key,
+        resources: report.config.resources.length,
       };
     },
   },

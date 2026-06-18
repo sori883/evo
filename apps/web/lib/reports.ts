@@ -1,4 +1,8 @@
 import {
+  BedrockAgentCoreClient,
+  InvokeAgentRuntimeCommand,
+} from "@aws-sdk/client-bedrock-agentcore";
+import {
   GetObjectCommand,
   ListObjectsV2Command,
   S3Client,
@@ -85,6 +89,38 @@ export async function listReports(): Promise<ReportSummary[]> {
       c.LastModified instanceof Date ? c.LastModified.toISOString() : "",
   }));
   return toReportList(objects.filter((o) => o.key.length > PREFIX.length));
+}
+
+/**
+ * レポート Runtime を SigV4 で invoke してオンデマンド生成する（~35s 同期）。
+ * AWS 認証は標準チェーン（ローカル=AWS_PROFILE / 本番=Vercel の IAM）。
+ */
+export async function generateReport(): Promise<{
+  config?: string;
+  operations?: string;
+}> {
+  const env = serverEnv();
+  const client = new BedrockAgentCoreClient({ region: env.AWS_REGION });
+  const sessionId = `ondemand-${Date.now()}-${Math.random().toString(36).slice(2, 10)}padpadpadpadpadpadpad`.slice(
+    0,
+    64,
+  );
+  const res = await client.send(
+    new InvokeAgentRuntimeCommand({
+      agentRuntimeArn: env.REPORT_RUNTIME_ARN,
+      runtimeSessionId: sessionId,
+      qualifier: "DEFAULT",
+      contentType: "application/json",
+      payload: new TextEncoder().encode("{}"),
+    }),
+  );
+  const body = (await res.response?.transformToString()) ?? "{}";
+  try {
+    const parsed = JSON.parse(body) as { config?: string; operations?: string };
+    return { config: parsed.config, operations: parsed.operations };
+  } catch {
+    return {};
+  }
 }
 
 /** 指定レポート(Markdown)を取得する。name は reports/ を除いたファイル名。 */

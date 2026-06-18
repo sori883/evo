@@ -23,26 +23,42 @@ export default function ReportsPage() {
   const [markdown, setMarkdown] = useState<string>("");
   const [loadingList, setLoadingList] = useState(true);
   const [loadingDoc, setLoadingDoc] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+
+  const loadList = useCallback(async () => {
+    setLoadingList(true);
+    setListError(null);
+    try {
+      const res = await fetch("/api/reports", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`一覧の取得に失敗しました (HTTP ${res.status})`);
+      }
+      const d = (await res.json()) as { reports?: ReportSummary[] };
+      setReports(d.reports ?? []);
+    } catch (e) {
+      setReports([]);
+      setListError(e instanceof Error ? e.message : "一覧の取得に失敗しました");
+    } finally {
+      setLoadingList(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch("/api/reports", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : { reports: [] }))
-      .then((d: { reports?: ReportSummary[] }) => setReports(d.reports ?? []))
-      .catch(() => setReports([]))
-      .finally(() => setLoadingList(false));
-  }, []);
+    void loadList();
+  }, [loadList]);
 
   const ofKind = useMemo(
     () => reports.filter((r) => r.kind === kind),
     [reports, kind],
   );
 
-  // 種別を切替えたら、その種別の先頭（最新）を選ぶ
   useEffect(() => {
     setSelected(ofKind[0]?.name ?? null);
   }, [ofKind]);
 
-  const load = useCallback((name: string) => {
+  const loadDoc = useCallback((name: string) => {
     setLoadingDoc(true);
     fetch(`/api/reports/${encodeURIComponent(name)}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : { markdown: "" }))
@@ -52,9 +68,26 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (selected) load(selected);
+    if (selected) loadDoc(selected);
     else setMarkdown("");
-  }, [selected, load]);
+  }, [selected, loadDoc]);
+
+  async function generate() {
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const res = await fetch("/api/reports/generate", { method: "POST" });
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(d.error ?? `生成に失敗しました (HTTP ${res.status})`);
+      }
+      await loadList();
+    } catch (e) {
+      setGenError(e instanceof Error ? e.message : "生成に失敗しました");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   return (
     <>
@@ -78,32 +111,58 @@ export default function ReportsPage() {
             ))}
           </div>
         </div>
-        {ofKind.length > 0 && (
-          <select
-            value={selected ?? ""}
-            onChange={(e) => setSelected(e.target.value)}
-            className="max-w-[45%] rounded-lg border border-border bg-surface px-3 py-1.5 text-sm outline-none focus:border-accent"
+        <div className="flex items-center gap-2">
+          {ofKind.length > 0 && (
+            <select
+              value={selected ?? ""}
+              onChange={(e) => setSelected(e.target.value)}
+              className="max-w-[40%] rounded-lg border border-border bg-surface px-3 py-1.5 text-sm outline-none focus:border-accent"
+            >
+              {ofKind.map((r) => (
+                <option key={r.name} value={r.name}>
+                  {r.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            type="button"
+            onClick={generate}
+            disabled={generating}
+            className="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
+            title="最新のレポートを今すぐ生成します（30秒ほどかかります）"
           >
-            {ofKind.map((r) => (
-              <option key={r.name} value={r.name}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        )}
+            {generating ? "生成中…" : "今すぐ生成"}
+          </button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-5 py-6">
-          {loadingList ? (
-            <p className="py-10 text-center text-sm text-muted">読み込み中…</p>
+          {genError && (
+            <p className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger">
+              {genError}
+            </p>
+          )}
+          {loadingList || generating ? (
+            <p className="py-10 text-center text-sm text-muted">
+              {generating ? "レポートを生成中…（30秒ほど）" : "読み込み中…"}
+            </p>
+          ) : listError ? (
+            <div className="grid place-items-center py-24 text-center">
+              <p className="text-lg font-medium">読み込みに失敗しました</p>
+              <p className="mt-1 text-sm text-muted">{listError}</p>
+              <p className="mt-1 text-xs text-muted">
+                ローカルでは AWS 認証(SSO)の再ログインが必要かもしれません。
+              </p>
+            </div>
           ) : ofKind.length === 0 ? (
             <div className="grid place-items-center py-24 text-center">
               <p className="text-lg font-medium">
                 まだ{kind === "config" ? "構成" : "運用"}レポートがありません
               </p>
               <p className="mt-1 text-sm text-muted">
-                レポートエージェントが生成するとここに表示されます。
+                「今すぐ生成」を押すか、スケジュール実行をお待ちください。
               </p>
             </div>
           ) : loadingDoc ? (

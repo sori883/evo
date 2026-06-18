@@ -11,6 +11,8 @@ const schema = z.object({
   MEMORY_ID: z.string().min(1),
   /** 運用レポートを閲覧するための S3 バケット。 */
   REPORTS_BUCKET: z.string().min(1),
+  /** オンデマンド生成で invoke するレポート Runtime の ARN。 */
+  REPORT_RUNTIME_ARN: z.string().min(1),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

@@ -181,11 +181,12 @@ export class ReportConstruct extends Construct {
       target: {
         arn: "arn:aws:scheduler:::aws-sdk:bedrockagentcore:invokeAgentRuntime",
         roleArn: schedulerRole.roleArn,
+        // universal target の Input は PascalCase（API のリクエストシェイプ）。
         input: JSON.stringify({
-          agentRuntimeArn: this.runtime.attrAgentRuntimeArn,
-          runtimeSessionId: "evo-report-scheduled-session-000000000001",
-          qualifier: "DEFAULT",
-          payload: "{}",
+          AgentRuntimeArn: this.runtime.attrAgentRuntimeArn,
+          RuntimeSessionId: "evo-report-scheduled-session-000000000001",
+          Qualifier: "DEFAULT",
+          Payload: "{}",
         }),
         retryPolicy: { maximumRetryAttempts: 1, maximumEventAgeInSeconds: 3600 },
       },

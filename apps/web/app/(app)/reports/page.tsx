@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ReportKind = "config" | "operations";
 type ReportSummary = {
@@ -175,7 +176,7 @@ export default function ReportsPage() {
             <p className="py-10 text-center text-sm text-muted">レポートを読み込み中…</p>
           ) : (
             <article className="report-md">
-              <Markdown>{markdown}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
             </article>
           )}
         </div>

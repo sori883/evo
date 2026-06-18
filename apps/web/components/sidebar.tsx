@@ -57,12 +57,20 @@ export function Sidebar({ email }: { email: string }) {
         <span className="text-sm font-semibold tracking-wide">evo chat</span>
       </div>
 
-      <div className="px-3">
+      <div className="space-y-1 px-3">
         <Link
           href="/chat"
           className="flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
         >
           ＋ 新しい会話
+        </Link>
+        <Link
+          href="/reports"
+          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-2 ${
+            pathname === "/reports" ? "bg-surface-2 text-fg" : "text-muted"
+          }`}
+        >
+          📄 運用レポート
         </Link>
       </div>
 

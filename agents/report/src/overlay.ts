@@ -2,11 +2,7 @@ import {
   type DynamoDBDocumentClient,
   QueryCommand,
 } from "@aws-sdk/lib-dynamodb";
-
-/** overlay アイテムの PK（単一システム想定）。 */
-export const OVERLAY_PK = "SYSTEM#report";
-/** overlay アイテムの SK プレフィックス。 */
-export const OVERLAY_SK_PREFIX = "OVERLAY#";
+import { OVERLAY_PK, OVERLAY_SK_PREFIX } from "@evo/shared";
 
 type OverlayItemLike = { instruction?: unknown };
 

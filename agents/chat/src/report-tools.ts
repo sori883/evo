@@ -21,14 +21,19 @@ export function createReportTools(env: AgentEnv, nowIso: () => string = () => ne
   const getLatestReport = tool({
     name: "get_latest_report",
     description:
-      "監視対象システムの最新の運用レポート(Markdown)を取得する。システムの状況・構成・ログ/メトリクス/アラート/脆弱性についてユーザーが尋ねたら使う。",
-    inputSchema: z.object({}),
-    callback: async () => {
+      "監視対象システムの最新レポート(Markdown)を取得する。kind=config は構成（アーキテクチャ/リソース）、kind=operations は運用（ログ/メトリクス/アラート/脆弱性/推奨）。状況を聞かれたら operations、構成を聞かれたら config を使う。",
+    inputSchema: z.object({
+      kind: z
+        .enum(["config", "operations"])
+        .default("operations")
+        .describe("config=構成 / operations=運用"),
+    }),
+    callback: async (input) => {
       try {
         const res = await s3.send(
           new GetObjectCommand({
             Bucket: env.REPORTS_BUCKET,
-            Key: "reports/latest.md",
+            Key: `reports/${input.kind}-latest.md`,
           }),
         );
         const body = await res.Body?.transformToString();

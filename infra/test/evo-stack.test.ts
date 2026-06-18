@@ -14,6 +14,9 @@ function buildTemplate(): Template {
     // テンプレート検証では S3 Asset の中身は不問。ビルド非依存にするため、
     // 常に存在する test ディレクトリ自身を Asset パスに使う。
     agentCodePath: path.join(__dirname),
+    reportCodePath: path.join(__dirname),
+    reportRuntimeName: "evo_report_test",
+    reportScheduleExpression: "rate(1 day)",
   });
   return Template.fromStack(stack);
 }
@@ -167,6 +170,45 @@ describe("EvoStack", () => {
               "logs:CreateLogStream",
               "logs:PutLogEvents",
             ]),
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("レポート用 Runtime を持つ（chat と合わせ 2 つ）", () => {
+    template.resourceCountIs("AWS::BedrockAgentCore::Runtime", 2);
+  });
+
+  it("レポート Runtime は JWT authorizer を持たない（SigV4 認証）", () => {
+    const runtimes = template.findResources("AWS::BedrockAgentCore::Runtime");
+    const report = Object.values(runtimes).find(
+      (r) =>
+        (r.Properties as { AgentRuntimeName?: string }).AgentRuntimeName ===
+        "evo_report_test",
+    );
+    expect(report).toBeDefined();
+    expect(
+      (report?.Properties as { AuthorizerConfiguration?: unknown })
+        .AuthorizerConfiguration,
+    ).toBeUndefined();
+  });
+
+  it("レポート保存用 S3 バケットと EventBridge Schedule を持つ", () => {
+    template.resourceCountIs("AWS::S3::Bucket", 1);
+    template.hasResourceProperties("AWS::Scheduler::Schedule", {
+      Target: Match.objectLike({
+        Arn: "arn:aws:scheduler:::aws-sdk:bedrockagentcore:invokeAgentRuntime",
+      }),
+    });
+  });
+
+  it("レポート実行ロールが収集(read-only)権限を持つ", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith(["tag:GetResources", "cloudwatch:DescribeAlarms"]),
           }),
         ]),
       }),

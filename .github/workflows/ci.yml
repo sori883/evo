@@ -32,11 +32,14 @@ jobs:
       # CodeZip(node_modules 同梱方式) を組み立てる。bedrock-agentcore(fastify) は
       # 動的 require のため単一バンドル不可。tsup で非バンドル build → pnpm deploy で
       # フラットな実体 node_modules を生成（symlink は zip で壊れるため hoisted）。
-      - name: Package agent (CodeZip)
+      - name: Package agents (CodeZip)
         run: |
           pnpm --filter @evo/agent-chat build
           pnpm --filter @evo/agent-chat --config.node-linker=hoisted deploy --prod --legacy agents/chat/deploy
           rm -rf agents/chat/deploy/node_modules/.bin
+          pnpm --filter @evo/agent-report build
+          pnpm --filter @evo/agent-report --config.node-linker=hoisted deploy --prod --legacy agents/report/deploy
+          rm -rf agents/report/deploy/node_modules/.bin
 
       - name: Build web
         run: pnpm --filter @evo/web build

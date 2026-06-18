@@ -18,4 +18,8 @@ new EvoStack(app, "EvoStack", {
   managedRuntime: process.env.AGENT_MANAGED_RUNTIME ?? "NODE_22",
   // `pnpm deploy` 生成の自己完結パッケージ(dist + node_modules)を CodeZip 化する
   agentCodePath: path.join(__dirname, "..", "..", "agents", "chat", "deploy"),
+  reportCodePath: path.join(__dirname, "..", "..", "agents", "report", "deploy"),
+  reportRuntimeName: process.env.REPORT_RUNTIME_NAME ?? "evo_report",
+  reportScheduleExpression:
+    process.env.REPORT_SCHEDULE_EXPRESSION ?? "rate(1 day)",
 });

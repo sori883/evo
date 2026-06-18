@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   type Report,
   buildReportPrompt,
+  parseRequestedKinds,
   renderConfigMarkdown,
   renderOperationsMarkdown,
 } from "./report.js";
@@ -68,6 +69,22 @@ describe("renderOperationsMarkdown", () => {
     expect(md).toContain("_（特になし）_");
     expect(md).toContain("### 反映した追加指示（会話由来）");
     expect(md).toContain("- コスト章を追加");
+  });
+});
+
+describe("parseRequestedKinds", () => {
+  it("指定された有効種別を返す", () => {
+    expect(parseRequestedKinds({ kinds: ["config"] })).toEqual(["config"]);
+    expect(parseRequestedKinds({ kinds: ["config", "operations"] })).toEqual([
+      "config",
+      "operations",
+    ]);
+  });
+  it("未指定/不正/空は既定 operations", () => {
+    expect(parseRequestedKinds({})).toEqual(["operations"]);
+    expect(parseRequestedKinds(null)).toEqual(["operations"]);
+    expect(parseRequestedKinds({ kinds: "config" })).toEqual(["operations"]);
+    expect(parseRequestedKinds({ kinds: ["nope"] })).toEqual(["operations"]);
   });
 });
 

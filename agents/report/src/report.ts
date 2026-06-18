@@ -39,6 +39,22 @@ export type Report = z.infer<typeof reportSchema>;
 /** レポート種別。 */
 export type ReportKind = "config" | "operations";
 
+const ALL_KINDS: ReportKind[] = ["config", "operations"];
+
+/**
+ * invoke の payload から「生成・保存する種別」を解釈する（純ロジック）。
+ * `{ kinds: ["operations"|"config"] }` を想定。未指定/不正は既定 ["operations"]
+ * （= 定時は運用のみ。構成はオンデマンドで明示指定したときだけ生成）。
+ */
+export function parseRequestedKinds(request: unknown): ReportKind[] {
+  const raw = (request as { kinds?: unknown } | null | undefined)?.kinds;
+  if (!Array.isArray(raw)) {
+    return ["operations"];
+  }
+  const kinds = ALL_KINDS.filter((k) => raw.includes(k));
+  return kinds.length > 0 ? kinds : ["operations"];
+}
+
 export type ReportMeta = {
   systemName: string;
   /** ISO 文字列。 */

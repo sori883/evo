@@ -7,6 +7,7 @@ import { loadEnv } from "./env.js";
 import { OverlayReader } from "./overlay.js";
 import {
   buildReportPrompt,
+  parseRequestedKinds,
   renderConfigMarkdown,
   renderOperationsMarkdown,
   reportSchema,
@@ -27,7 +28,9 @@ const overlayReader = new OverlayReader(ddb, env.SHARED_TABLE_NAME);
  */
 const app = new BedrockAgentCoreApp({
   invocationHandler: {
-    process: async () => {
+    process: async (request) => {
+      // payload で指定された種別だけを保存する（定時=operations のみ、構成は明示時）。
+      const kinds = parseRequestedKinds(request);
       const overlay = await overlayReader.list().catch(() => []);
 
       const agent = createReportAgent(env);
@@ -36,30 +39,30 @@ const app = new BedrockAgentCoreApp({
 
       const generatedAt = new Date().toISOString();
       const meta = { systemName: "evo", generatedAt, appliedOverlay: overlay };
-      const configMd = renderConfigMarkdown(report, meta);
-      const operationsMd = renderOperationsMarkdown(report, meta);
 
-      const configSaved = await saveReport(
-        s3,
-        env.REPORTS_BUCKET,
-        "config",
-        configMd,
-        generatedAt,
-      );
-      const opsSaved = await saveReport(
-        s3,
-        env.REPORTS_BUCKET,
-        "operations",
-        operationsMd,
-        generatedAt,
-      );
+      const saved: Partial<Record<"config" | "operations", string>> = {};
+      if (kinds.includes("config")) {
+        const r = await saveReport(
+          s3,
+          env.REPORTS_BUCKET,
+          "config",
+          renderConfigMarkdown(report, meta),
+          generatedAt,
+        );
+        saved.config = r.key;
+      }
+      if (kinds.includes("operations")) {
+        const r = await saveReport(
+          s3,
+          env.REPORTS_BUCKET,
+          "operations",
+          renderOperationsMarkdown(report, meta),
+          generatedAt,
+        );
+        saved.operations = r.key;
+      }
 
-      return {
-        ok: true,
-        config: configSaved.key,
-        operations: opsSaved.key,
-        resources: report.config.resources.length,
-      };
+      return { ok: true, kinds, ...saved };
     },
   },
 });

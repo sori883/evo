@@ -186,7 +186,8 @@ export class ReportConstruct extends Construct {
           AgentRuntimeArn: this.runtime.attrAgentRuntimeArn,
           RuntimeSessionId: "evo-report-scheduled-session-000000000001",
           Qualifier: "DEFAULT",
-          Payload: "{}",
+          // 定時は運用レポートのみ生成（構成はオンデマンドのみ）。
+          Payload: JSON.stringify({ kinds: ["operations"] }),
         }),
         retryPolicy: { maximumRetryAttempts: 1, maximumEventAgeInSeconds: 3600 },
       },

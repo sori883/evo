@@ -9,6 +9,8 @@ const schema = z.object({
   AGENT_RUNTIME_URL: z.string().url(),
   /** チャット履歴を AgentCore Memory から引くための memoryId。 */
   MEMORY_ID: z.string().min(1),
+  /** 運用レポートを閲覧するための S3 バケット。 */
+  REPORTS_BUCKET: z.string().min(1),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

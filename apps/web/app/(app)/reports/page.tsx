@@ -1,8 +1,21 @@
 "use client";
 
+import type { ComponentPropsWithoutRef } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+/** react-markdown のカスタムレンダラ（テーブルをラップ、リンクを新規タブに）。 */
+const mdComponents = {
+  table: (props: ComponentPropsWithoutRef<"table">) => (
+    <div className="report-table">
+      <table {...props} />
+    </div>
+  ),
+  a: (props: ComponentPropsWithoutRef<"a">) => (
+    <a {...props} target="_blank" rel="noopener noreferrer" />
+  ),
+};
 
 type ReportKind = "config" | "operations";
 type ReportSummary = {
@@ -175,8 +188,10 @@ export default function ReportsPage() {
           ) : loadingDoc ? (
             <p className="py-10 text-center text-sm text-muted">レポートを読み込み中…</p>
           ) : (
-            <article className="report-md">
-              <Markdown remarkPlugins={[remarkGfm]}>{markdown}</Markdown>
+            <article className="report-card report-md">
+              <Markdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                {markdown}
+              </Markdown>
             </article>
           )}
         </div>

@@ -34,11 +34,25 @@ export class EvoStack extends cdk.Stack {
     const auth = new AuthConstruct(this, "Auth");
     const memory = new MemoryConstruct(this, "Memory");
     const data = new DataConstruct(this, "Data");
+
+    // chat が reports バケットを参照するため Report を先に作る。
+    const report = new ReportConstruct(this, "Report", {
+      table: data.table,
+      modelId: props.modelId,
+      managedRuntime: props.managedRuntime,
+      codePath: props.reportCodePath,
+      runtimeName: props.reportRuntimeName,
+      targetTagKey: "evo-target",
+      targetTagValue: "true",
+      scheduleExpression: props.reportScheduleExpression,
+    });
+
     const agent = new AgentConstruct(this, "Agent", {
       userPool: auth.userPool,
       userPoolClient: auth.userPoolClient,
       memory: memory.memory,
       table: data.table,
+      reportsBucket: report.bucket,
       modelId: props.modelId,
       agentRuntimeName: props.agentRuntimeName,
       managedRuntime: props.managedRuntime,
@@ -52,16 +66,6 @@ export class EvoStack extends cdk.Stack {
     new cdk.CfnOutput(this, "MemoryId", { value: memory.memory.attrMemoryId });
     new cdk.CfnOutput(this, "AgentRuntimeArn", {
       value: agent.runtime.attrAgentRuntimeArn,
-    });
-    const report = new ReportConstruct(this, "Report", {
-      table: data.table,
-      modelId: props.modelId,
-      managedRuntime: props.managedRuntime,
-      codePath: props.reportCodePath,
-      runtimeName: props.reportRuntimeName,
-      targetTagKey: "evo-target",
-      targetTagValue: "true",
-      scheduleExpression: props.reportScheduleExpression,
     });
 
     new cdk.CfnOutput(this, "SharedTableName", { value: data.table.tableName });

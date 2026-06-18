@@ -17,6 +17,15 @@ importers:
       '@aws-sdk/client-bedrock-agentcore':
         specifier: ^3.1069.0
         version: 3.1069.0
+      '@aws-sdk/client-dynamodb':
+        specifier: ^3.1069.0
+        version: 3.1070.0
+      '@aws-sdk/client-s3':
+        specifier: ^3.1069.0
+        version: 3.1070.0
+      '@aws-sdk/lib-dynamodb':
+        specifier: ^3.1069.0
+        version: 3.1070.0(@aws-sdk/client-dynamodb@3.1070.0)
       '@evo/shared':
         specifier: workspace:*
         version: link:../../packages/shared

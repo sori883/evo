@@ -76,7 +76,11 @@ export default function ReportsPage() {
     setGenerating(true);
     setGenError(null);
     try {
-      const res = await fetch("/api/reports/generate", { method: "POST" });
+      const res = await fetch("/api/reports/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind }),
+      });
       if (!res.ok) {
         const d = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(d.error ?? `生成に失敗しました (HTTP ${res.status})`);
@@ -130,9 +134,11 @@ export default function ReportsPage() {
             onClick={generate}
             disabled={generating}
             className="shrink-0 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
-            title="最新のレポートを今すぐ生成します（30秒ほどかかります）"
+            title={`${kind === "config" ? "構成" : "運用"}レポートを今すぐ生成します（30秒ほどかかります）`}
           >
-            {generating ? "生成中…" : "今すぐ生成"}
+            {generating
+              ? "生成中…"
+              : `${kind === "config" ? "構成" : "運用"}を今すぐ生成`}
           </button>
         </div>
       </header>

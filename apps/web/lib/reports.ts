@@ -95,10 +95,9 @@ export async function listReports(): Promise<ReportSummary[]> {
  * レポート Runtime を SigV4 で invoke してオンデマンド生成する（~35s 同期）。
  * AWS 認証は標準チェーン（ローカル=AWS_PROFILE / 本番=Vercel の IAM）。
  */
-export async function generateReport(): Promise<{
-  config?: string;
-  operations?: string;
-}> {
+export async function generateReport(
+  kind: ReportKind,
+): Promise<{ ok: boolean }> {
   const env = serverEnv();
   const client = new BedrockAgentCoreClient({ region: env.AWS_REGION });
   const sessionId = `ondemand-${Date.now()}-${Math.random().toString(36).slice(2, 10)}padpadpadpadpadpadpad`.slice(
@@ -111,15 +110,15 @@ export async function generateReport(): Promise<{
       runtimeSessionId: sessionId,
       qualifier: "DEFAULT",
       contentType: "application/json",
-      payload: new TextEncoder().encode("{}"),
+      payload: new TextEncoder().encode(JSON.stringify({ kinds: [kind] })),
     }),
   );
   const body = (await res.response?.transformToString()) ?? "{}";
   try {
-    const parsed = JSON.parse(body) as { config?: string; operations?: string };
-    return { config: parsed.config, operations: parsed.operations };
+    const parsed = JSON.parse(body) as { ok?: boolean };
+    return { ok: parsed.ok === true };
   } catch {
-    return {};
+    return { ok: false };
   }
 }
 

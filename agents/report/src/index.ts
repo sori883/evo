@@ -12,6 +12,7 @@ import {
   renderOperationsMarkdown,
   reportSchema,
 } from "./report.js";
+import { createS3SkillStorage, syncSkills } from "./skill-sync.js";
 import { saveReport } from "./storage.js";
 
 const env = loadEnv();
@@ -20,6 +21,16 @@ const ddb = DynamoDBDocumentClient.from(
   new DynamoDBClient({ region: env.AWS_REGION }),
 );
 const overlayReader = new OverlayReader(ddb, env.SHARED_TABLE_NAME);
+
+// 起動時に共有 skill ストア(S3)から自分が読める skill を /tmp へ sync する。
+// 失敗しても systemPrompt で動作継続できるよう握りつぶして空にフォールバック。
+const skillStorage = createS3SkillStorage(s3, env.SKILLS_BUCKET);
+const skillDirs = await syncSkills(skillStorage, env.AGENT_ID, "/tmp/evo-skills").catch(
+  (e) => {
+    console.error("skill sync に失敗（skill 無しで継続）:", e);
+    return [] as string[];
+  },
+);
 
 /**
  * スケジュール(SigV4)で invoke される運用レポート生成ハンドラ。
@@ -33,7 +44,10 @@ const app = new BedrockAgentCoreApp({
       const kinds = parseRequestedKinds(request);
       const overlay = await overlayReader.list().catch(() => []);
 
-      const agent = createReportAgent(env);
+      const agent = createReportAgent(env, {
+        skillDirs,
+        storage: skillStorage,
+      });
       const result = await agent.invoke(buildReportPrompt(overlay));
       const report = reportSchema.parse(result.structuredOutput);
 

@@ -6,10 +6,15 @@ import { Asset } from "aws-cdk-lib/aws-s3-assets";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as scheduler from "aws-cdk-lib/aws-scheduler";
 import { Construct } from "constructs";
+import type { SkillStore } from "./skill-store";
 
 export interface ReportConstructProps {
   /** overlay(会話由来の改善指示)を読む共有テーブル。 */
   table: dynamodb.ITable;
+  /** 共有 skill ストア。report は自分の namespace のみ読む。 */
+  skillStore: SkillStore;
+  /** 自分の skill namespace（= "report"）。 */
+  agentId: string;
   /** Bedrock モデルID（chat と同一）。 */
   modelId: string;
   /** CodeZip の managed runtime 識別子（NODE_22）。 */
@@ -101,6 +106,11 @@ export class ReportConstruct extends Construct {
     this.bucket.grantPut(this.executionRole, "reports/*");
     props.table.grantReadData(this.executionRole);
 
+    // 共有 skill: report は非ハブ（自分の namespace のみ読み取り）。
+    // 書込は自分の dynamic のみ（chat の skill は読めない）。
+    props.skillStore.grantRead(this.executionRole, props.agentId, false);
+    props.skillStore.grantWriteDynamic(this.executionRole, props.agentId);
+
     // 自身のコンテナログ（chat と同様、未付与だとロググループが作られない）
     this.executionRole.addToPolicy(
       new iam.PolicyStatement({
@@ -156,6 +166,8 @@ export class ReportConstruct extends Construct {
         BEDROCK_MODEL_ID: props.modelId,
         REPORTS_BUCKET: this.bucket.bucketName,
         SHARED_TABLE_NAME: props.table.tableName,
+        SKILLS_BUCKET: props.skillStore.bucket.bucketName,
+        AGENT_ID: props.agentId,
         TARGET_TAG_KEY: props.targetTagKey,
         TARGET_TAG_VALUE: props.targetTagValue,
       },

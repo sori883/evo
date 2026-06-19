@@ -9,6 +9,10 @@ const envSchema = z.object({
   BEDROCK_MODEL_ID: z.string().min(1),
   /** レポート Markdown を保存する S3 バケット。 */
   REPORTS_BUCKET: z.string().min(1),
+  /** 共有 skill ストアの S3 バケット。 */
+  SKILLS_BUCKET: z.string().min(1),
+  /** 自分の skill namespace（= "report"）。 */
+  AGENT_ID: z.string().min(1),
   /** 会話由来の改善 overlay を読む DynamoDB テーブル。 */
   SHARED_TABLE_NAME: z.string().min(1),
   /** 監視対象を選ぶタグ（既定 evo-target=true）。 */

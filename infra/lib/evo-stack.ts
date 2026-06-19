@@ -5,6 +5,7 @@ import { AuthConstruct } from "./constructs/auth";
 import { DataConstruct } from "./constructs/data";
 import { MemoryConstruct } from "./constructs/memory";
 import { ReportConstruct } from "./constructs/report";
+import { SkillStore } from "./constructs/skill-store";
 
 export interface EvoStackProps extends cdk.StackProps {
   /** Bedrock モデルID（jp.* 推論プロファイル）。env 由来。 */
@@ -19,6 +20,8 @@ export interface EvoStackProps extends cdk.StackProps {
   reportRuntimeName: string;
   /** レポートのスケジュール式（例: rate(1 day)）。 */
   reportScheduleExpression: string;
+  /** base skill のシード元（リポジトリ `skills/` ディレクトリ）。 */
+  skillsSeedPath: string;
 }
 
 /**
@@ -34,10 +37,16 @@ export class EvoStack extends cdk.Stack {
     const auth = new AuthConstruct(this, "Auth");
     const memory = new MemoryConstruct(this, "Memory");
     const data = new DataConstruct(this, "Data");
+    // 共有 skill ストア（base を seed、各 Runtime に namespace 別アクセスを付与）。
+    const skills = new SkillStore(this, "Skills", {
+      seedPath: props.skillsSeedPath,
+    });
 
     // chat が reports バケットを参照するため Report を先に作る。
     const report = new ReportConstruct(this, "Report", {
       table: data.table,
+      skillStore: skills,
+      agentId: "report",
       modelId: props.modelId,
       managedRuntime: props.managedRuntime,
       codePath: props.reportCodePath,
@@ -53,6 +62,8 @@ export class EvoStack extends cdk.Stack {
       memory: memory.memory,
       table: data.table,
       reportsBucket: report.bucket,
+      skillStore: skills,
+      agentId: "chat",
       modelId: props.modelId,
       agentRuntimeName: props.agentRuntimeName,
       managedRuntime: props.managedRuntime,
@@ -74,6 +85,9 @@ export class EvoStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, "ReportsBucketName", {
       value: report.bucket.bucketName,
+    });
+    new cdk.CfnOutput(this, "SkillsBucketName", {
+      value: skills.bucket.bucketName,
     });
   }
 }

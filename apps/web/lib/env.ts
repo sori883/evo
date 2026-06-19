@@ -13,6 +13,8 @@ const schema = z.object({
   REPORTS_BUCKET: z.string().min(1),
   /** オンデマンド生成で invoke するレポート Runtime の ARN。 */
   REPORT_RUNTIME_ARN: z.string().min(1),
+  /** 共有 skill ストアを閲覧するための S3 バケット。 */
+  SKILLS_BUCKET: z.string().min(1),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

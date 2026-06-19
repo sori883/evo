@@ -25,10 +25,12 @@ out/
 # cdk
 cdk.out/
 .cdk.staging/
+infra/cdk-outputs.json
 
 # playwright
 test-results/
 playwright-report/
+.playwright-cli/
 
 # logs
 *.log

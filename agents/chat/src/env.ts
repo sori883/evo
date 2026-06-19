@@ -13,6 +13,10 @@ const envSchema = z.object({
   COGNITO_CLIENT_ID: z.string().min(1),
   /** 運用レポートを読む S3 バケット。 */
   REPORTS_BUCKET: z.string().min(1),
+  /** 共有 skill ストアの S3 バケット。 */
+  SKILLS_BUCKET: z.string().min(1),
+  /** 自分の skill namespace（= "chat"）。ハブとして全 namespace を読む。 */
+  AGENT_ID: z.string().min(1),
   /** レポート改善 overlay を書く DynamoDB テーブル。 */
   SHARED_TABLE_NAME: z.string().min(1),
 });

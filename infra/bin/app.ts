@@ -22,4 +22,6 @@ new EvoStack(app, "EvoStack", {
   reportRuntimeName: process.env.REPORT_RUNTIME_NAME ?? "evo_report",
   reportScheduleExpression:
     process.env.REPORT_SCHEDULE_EXPRESSION ?? "rate(1 day)",
+  // base skill のシード元（リポジトリ直下 skills/）
+  skillsSeedPath: path.join(__dirname, "..", "..", "skills"),
 });

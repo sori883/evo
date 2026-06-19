@@ -1,6 +1,9 @@
+import { type SkillStorage } from "@evo/shared";
 import { Agent, BedrockModel } from "@strands-agents/sdk";
+import { AgentSkills } from "@strands-agents/sdk/vended-plugins/skills";
 import type { AgentEnv } from "./env.js";
 import { createReportTools } from "./report-tools.js";
+import { createSkillTools } from "./skill-tools.js";
 
 const SYSTEM_PROMPT = [
   "あなたは親切で誠実な日本語アシスタントです。",
@@ -11,14 +14,27 @@ const SYSTEM_PROMPT = [
   "アーキテクチャ・リソース構成は kind=config(構成) を使います。",
   "レポートの内容や作り方への要望（次回○○も載せて、構成の誤り指摘 等）があれば、",
   "request_report_change ツールで登録してください。",
+  "自分の応答手順を恒久的に改善したい場合は improve_skill ツールで skill を更新できます（次回起動から適用）。",
 ].join("\n");
+
+export interface ChatAgentDeps {
+  /** S3 から sync 済みの skill ディレクトリ群（chat はハブ=全 namespace）。 */
+  skillDirs: string[];
+  /** 自己改善ツールが書き込む skill ストレージ。 */
+  storage: SkillStorage;
+}
 
 /**
  * Strands Agent を生成する。
  * 取得済みの記憶コンテキストがあれば systemPrompt に注入し、
- * 運用レポート連携ツール（参照 / 改善指示の登録）を付与する。
+ * 運用レポート連携ツール（参照 / 改善指示の登録）と自己改善ツールを付与する。
+ * skill は起動時に共有ストアから sync 済みのものを使う。
  */
-export function createAgent(env: AgentEnv, memoryContext: string): Agent {
+export function createAgent(
+  env: AgentEnv,
+  memoryContext: string,
+  deps: ChatAgentDeps,
+): Agent {
   const systemPrompt =
     memoryContext.length > 0
       ? `${SYSTEM_PROMPT}\n\n# ユーザーに関する記憶\n${memoryContext}`
@@ -30,6 +46,14 @@ export function createAgent(env: AgentEnv, memoryContext: string): Agent {
       region: env.AWS_REGION,
     }),
     systemPrompt,
-    tools: createReportTools(env),
+    tools: [
+      ...createReportTools(env),
+      ...createSkillTools(deps.storage, env.AGENT_ID),
+    ],
+    // sync した skill がある時だけ AgentSkills を有効化する（空でも起動可能に）。
+    plugins:
+      deps.skillDirs.length > 0
+        ? [new AgentSkills({ skills: deps.skillDirs })]
+        : [],
   });
 }

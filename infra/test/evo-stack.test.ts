@@ -17,6 +17,8 @@ function buildTemplate(): Template {
     reportCodePath: path.join(__dirname),
     reportRuntimeName: "evo_report_test",
     reportScheduleExpression: "rate(1 day)",
+    // skill seed も S3 Asset/BucketDeployment になるため実在ディレクトリを使う。
+    skillsSeedPath: path.join(__dirname),
   });
   return Template.fromStack(stack);
 }
@@ -194,13 +196,93 @@ describe("EvoStack", () => {
     ).toBeUndefined();
   });
 
-  it("レポート保存用 S3 バケットと EventBridge Schedule を持つ", () => {
-    template.resourceCountIs("AWS::S3::Bucket", 1);
+  it("S3 バケットを 2 つ持つ（レポート用 + 共有 skill 用）", () => {
+    template.resourceCountIs("AWS::S3::Bucket", 2);
+  });
+
+  it("レポート用 EventBridge Schedule を持つ", () => {
     template.hasResourceProperties("AWS::Scheduler::Schedule", {
       Target: Match.objectLike({
         Arn: "arn:aws:scheduler:::aws-sdk:bedrockagentcore:invokeAgentRuntime",
       }),
     });
+  });
+
+  it("base skill を BucketDeployment で skills/ に seed する（prune 無効）", () => {
+    // prune:false が重要 — 実行時生成の dynamic/ skill を毎デプロイで消さない。
+    template.hasResourceProperties("Custom::CDKBucketDeployment", {
+      DestinationBucketKeyPrefix: "skills/",
+      Prune: false,
+    });
+  });
+
+  it("chat はハブとして skills/* を読める", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "s3:GetObject",
+            Resource: { "Fn::Join": ["", Match.arrayWith(["/skills/*"])] },
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("report は自分の namespace(skills/report/*)のみ読める（chat の skill は読めない）", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "s3:GetObject",
+            Resource: {
+              "Fn::Join": ["", Match.arrayWith(["/skills/report/*"])],
+            },
+          }),
+          // ListBucket は prefix 条件で report 配下に限定される。
+          Match.objectLike({
+            Action: "s3:ListBucket",
+            Condition: {
+              StringLike: { "s3:prefix": Match.arrayWith(["skills/report/"]) },
+            },
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("各エージェントは自分の dynamic namespace にのみ書ける", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "s3:PutObject",
+            Resource: {
+              "Fn::Join": ["", Match.arrayWith(["/skills/chat/dynamic/*"])],
+            },
+          }),
+        ]),
+      }),
+    });
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "s3:PutObject",
+            Resource: {
+              "Fn::Join": ["", Match.arrayWith(["/skills/report/dynamic/*"])],
+            },
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("共有 skill バケット名を出力する", () => {
+    const outputs = template.findOutputs("*");
+    expect(Object.keys(outputs)).toEqual(
+      expect.arrayContaining(["SkillsBucketName", "ReportsBucketName"]),
+    );
   });
 
   it("レポート実行ロールが収集(read-only)権限を持つ", () => {

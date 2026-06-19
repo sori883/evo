@@ -72,6 +72,14 @@ export function Sidebar({ email }: { email: string }) {
         >
           📄 運用レポート
         </Link>
+        <Link
+          href="/skills"
+          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-2 ${
+            pathname === "/skills" ? "bg-surface-2 text-fg" : "text-muted"
+          }`}
+        >
+          🧠 Skills
+        </Link>
       </div>
 
       <nav className="mt-4 min-h-0 flex-1 overflow-y-auto px-2">

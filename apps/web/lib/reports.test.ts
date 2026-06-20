@@ -13,9 +13,10 @@ describe("reportLabel", () => {
   it("latest は『最新』", () => {
     expect(reportLabel("config-latest.md")).toBe("最新");
   });
-  it("タイムスタンプ名を日時に整形", () => {
+  it("タイムスタンプ名を JST 日時に整形", () => {
+    // 01:02:59 UTC → 10:02:59 JST (+9h)
     expect(reportLabel("operations-2026-06-18T010259Z.md")).toBe(
-      "2026-06-18 01:02:59 UTC",
+      "2026-06-18 10:02:59 JST",
     );
   });
 });

@@ -7,6 +7,7 @@ import {
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { formatJst } from "@evo/shared";
 import { serverEnv } from "./env";
 
 const PREFIX = "reports/";
@@ -33,15 +34,18 @@ export function parseKind(name: string): ReportKind | null {
   return null;
 }
 
-/** S3 キー名から表示用ラベルを作る。 */
+/** S3 キー名から表示用ラベル（JST）を作る。 */
 export function reportLabel(name: string): string {
   const rest = name.replace(/^(config|operations)-/, "").replace(/\.md$/, "");
   if (rest === "latest") {
     return "最新";
   }
-  // 2026-06-18T010259Z → 2026-06-18 01:02:59 UTC
+  // 2026-06-18T010259Z（UTC, コロン無し） → ISO に戻して JST へ整形
   const m = rest.match(/^(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
-  return m ? `${m[1]} ${m[2]}:${m[3]}:${m[4]} UTC` : rest;
+  if (!m) {
+    return rest;
+  }
+  return formatJst(`${m[1]}T${m[2]}:${m[3]}:${m[4]}Z`);
 }
 
 /**

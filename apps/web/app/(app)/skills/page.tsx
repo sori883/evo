@@ -4,6 +4,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatJst } from "@evo/shared";
 import { parseFrontmatter } from "@/lib/frontmatter";
 
 /** react-markdown のカスタムレンダラ（テーブルをラップ、リンクを新規タブに）。 */
@@ -31,13 +32,6 @@ const TIER_LABEL: Record<SkillTier, string> = {
   base: "base",
   dynamic: "dynamic",
 };
-
-function fmtDate(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
-}
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState<SkillSummary[]>([]);
@@ -205,7 +199,9 @@ export default function SkillsPage() {
                   {current.tier}
                 </span>
                 <div className="ml-auto flex items-center gap-3">
-                  {current.updatedAt && <span>{fmtDate(current.updatedAt)}</span>}
+                  {current.updatedAt && (
+                    <span>{formatJst(current.updatedAt)}</span>
+                  )}
                   <button
                     type="button"
                     onClick={downloadCurrent}

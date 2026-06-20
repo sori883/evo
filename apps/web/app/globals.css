@@ -80,6 +80,25 @@ main {
   line-height: 1.8;
   color: var(--color-fg);
 }
+
+/* skill の frontmatter（name/description）を本文上部にカード表示する */
+.skill-frontmatter {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.skill-frontmatter .skill-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.skill-frontmatter .skill-description {
+  margin: 0.4rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
 .report-md > :first-child {
   margin-top: 0;
 }

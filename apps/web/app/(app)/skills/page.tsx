@@ -4,6 +4,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { parseFrontmatter } from "@/lib/frontmatter";
 
 /** react-markdown のカスタムレンダラ（テーブルをラップ、リンクを新規タブに）。 */
 const mdComponents = {
@@ -102,6 +103,11 @@ export default function SkillsPage() {
   }, [selected, loadDoc]);
 
   const current = skills.find((s) => s.key === selected) ?? null;
+  // frontmatter（name/description）を分離し、本文だけを Markdown 描画する。
+  const { attributes, body } = useMemo(
+    () => parseFrontmatter(markdown),
+    [markdown],
+  );
 
   return (
     <>
@@ -203,8 +209,20 @@ export default function SkillsPage() {
               </p>
             ) : (
               <article className="report-card report-md">
+                {(attributes.name || attributes.description) && (
+                  <div className="skill-frontmatter">
+                    {attributes.name && (
+                      <h1 className="skill-name">{attributes.name}</h1>
+                    )}
+                    {attributes.description && (
+                      <p className="skill-description">
+                        {attributes.description}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <Markdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                  {markdown}
+                  {body}
                 </Markdown>
               </article>
             )}

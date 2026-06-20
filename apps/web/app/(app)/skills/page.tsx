@@ -109,6 +109,22 @@ export default function SkillsPage() {
     [markdown],
   );
 
+  // 表示中の SKILL.md を原文（frontmatter 込み）でダウンロードする。
+  const downloadCurrent = useCallback(() => {
+    if (!current || !markdown) return;
+    const blob = new Blob([markdown], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${current.namespace}-${current.tier}-${current.skill}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [current, markdown]);
+
   return (
     <>
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-5">
@@ -188,9 +204,18 @@ export default function SkillsPage() {
                 >
                   {current.tier}
                 </span>
-                {current.updatedAt && (
-                  <span className="ml-auto">{fmtDate(current.updatedAt)}</span>
-                )}
+                <div className="ml-auto flex items-center gap-3">
+                  {current.updatedAt && <span>{fmtDate(current.updatedAt)}</span>}
+                  <button
+                    type="button"
+                    onClick={downloadCurrent}
+                    disabled={loadingDoc || markdown.length === 0}
+                    className="rounded-lg border border-border px-2.5 py-1 font-medium text-fg transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                    title="この SKILL.md をダウンロード"
+                  >
+                    ⬇ ダウンロード
+                  </button>
+                </div>
               </div>
             )}
             {loadingList ? (

@@ -126,6 +126,18 @@ export async function generateReport(
   }
 }
 
+/**
+ * レポート本文中の「生成日時: <UTC ISO>」を JST 表記へ変換する（表示用）。
+ * 既存（UTC ISO で保存済み）レポートも即 JST 表示にするための後処理。
+ * 既に JST 表記（Z を含まない）の本文は対象外なのでそのまま。
+ */
+export function jstifyGeneratedAt(markdown: string): string {
+  return markdown.replace(
+    /(生成日時:\s*)(\d{4}-\d{2}-\d{2}T[\d:.]+Z)/g,
+    (_full, prefix: string, iso: string) => `${prefix}${formatJst(iso)}`,
+  );
+}
+
 /** 指定レポート(Markdown)を取得する。name は reports/ を除いたファイル名。 */
 export async function getReport(name: string): Promise<string | null> {
   // パストラバーサル防止: ファイル名のみ許可。
@@ -137,7 +149,8 @@ export async function getReport(name: string): Promise<string | null> {
     const res = await s3.send(
       new GetObjectCommand({ Bucket: bucket, Key: `${PREFIX}${name}` }),
     );
-    return (await res.Body?.transformToString()) ?? null;
+    const md = await res.Body?.transformToString();
+    return md === undefined ? null : jstifyGeneratedAt(md);
   } catch {
     return null;
   }

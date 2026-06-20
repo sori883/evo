@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseKind, reportLabel, toReportList } from "./reports.js";
+import {
+  jstifyGeneratedAt,
+  parseKind,
+  reportLabel,
+  toReportList,
+} from "./reports.js";
 
 describe("parseKind", () => {
   it("プレフィックスから種別を判定", () => {
@@ -18,6 +23,18 @@ describe("reportLabel", () => {
     expect(reportLabel("operations-2026-06-18T010259Z.md")).toBe(
       "2026-06-18 10:02:59 JST",
     );
+  });
+});
+
+describe("jstifyGeneratedAt", () => {
+  it("本文の生成日時(UTC ISO)を JST に変換する", () => {
+    const md = "# 運用レポート: evo\n\n> 生成日時: 2026-06-19T05:01:10.123Z\n\n## サマリ";
+    expect(jstifyGeneratedAt(md)).toContain("> 生成日時: 2026-06-19 14:01:10 JST");
+  });
+
+  it("既に JST 表記なら変更しない", () => {
+    const md = "> 生成日時: 2026-06-19 14:01:10 JST";
+    expect(jstifyGeneratedAt(md)).toBe(md);
   });
 });
 

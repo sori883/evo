@@ -1,3 +1,4 @@
+import { formatJst } from "@evo/shared";
 import { z } from "zod";
 
 /**
@@ -82,7 +83,12 @@ function section(title: string, body: string): string {
 }
 
 function header(title: string, meta: ReportMeta): string[] {
-  return [`# ${title}: ${meta.systemName}`, "", `> 生成日時: ${meta.generatedAt}`, ""];
+  return [
+    `# ${title}: ${meta.systemName}`,
+    "",
+    `> 生成日時: ${formatJst(meta.generatedAt)}`,
+    "",
+  ];
 }
 
 function overlayFooter(meta: ReportMeta): string[] {

@@ -4,6 +4,8 @@ import type { ComponentPropsWithoutRef } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatJst } from "@evo/shared";
+import { parseFrontmatter } from "@/lib/frontmatter";
 
 /** react-markdown のカスタムレンダラ（テーブルをラップ、リンクを新規タブに）。 */
 const mdComponents = {
@@ -30,13 +32,6 @@ const TIER_LABEL: Record<SkillTier, string> = {
   base: "base",
   dynamic: "dynamic",
 };
-
-function fmtDate(iso: string): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
-}
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState<SkillSummary[]>([]);
@@ -102,6 +97,27 @@ export default function SkillsPage() {
   }, [selected, loadDoc]);
 
   const current = skills.find((s) => s.key === selected) ?? null;
+  // frontmatter（name/description）を分離し、本文だけを Markdown 描画する。
+  const { attributes, body } = useMemo(
+    () => parseFrontmatter(markdown),
+    [markdown],
+  );
+
+  // 表示中の SKILL.md を原文（frontmatter 込み）でダウンロードする。
+  const downloadCurrent = useCallback(() => {
+    if (!current || !markdown) return;
+    const blob = new Blob([markdown], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${current.namespace}-${current.tier}-${current.skill}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, [current, markdown]);
 
   return (
     <>
@@ -182,9 +198,20 @@ export default function SkillsPage() {
                 >
                   {current.tier}
                 </span>
-                {current.updatedAt && (
-                  <span className="ml-auto">{fmtDate(current.updatedAt)}</span>
-                )}
+                <div className="ml-auto flex items-center gap-3">
+                  {current.updatedAt && (
+                    <span>{formatJst(current.updatedAt)}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={downloadCurrent}
+                    disabled={loadingDoc || markdown.length === 0}
+                    className="rounded-lg border border-border px-2.5 py-1 font-medium text-fg transition-colors hover:border-accent hover:text-accent disabled:opacity-50"
+                    title="この SKILL.md をダウンロード"
+                  >
+                    ⬇ ダウンロード
+                  </button>
+                </div>
               </div>
             )}
             {loadingList ? (
@@ -203,8 +230,20 @@ export default function SkillsPage() {
               </p>
             ) : (
               <article className="report-card report-md">
+                {(attributes.name || attributes.description) && (
+                  <div className="skill-frontmatter">
+                    {attributes.name && (
+                      <h1 className="skill-name">{attributes.name}</h1>
+                    )}
+                    {attributes.description && (
+                      <p className="skill-description">
+                        {attributes.description}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <Markdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                  {markdown}
+                  {body}
                 </Markdown>
               </article>
             )}

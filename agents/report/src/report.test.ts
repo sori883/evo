@@ -29,6 +29,12 @@ const base: Report = {
 const meta = { systemName: "evo", generatedAt: "2026-06-17T00:00:00Z" };
 
 describe("renderConfigMarkdown", () => {
+  it("生成日時を JST で表示する", () => {
+    // meta.generatedAt = 2026-06-17T00:00:00Z → 09:00:00 JST
+    const md = renderConfigMarkdown(base, meta);
+    expect(md).toContain("> 生成日時: 2026-06-17 09:00:00 JST");
+  });
+
   it("構成の章立てとリソース表を含み、運用セクションは含まない", () => {
     const md = renderConfigMarkdown(base, meta);
     expect(md).toContain("# 構成レポート: evo");

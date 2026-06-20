@@ -7,6 +7,7 @@ import {
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { formatJst } from "@evo/shared";
 import { serverEnv } from "./env";
 
 const PREFIX = "reports/";
@@ -33,15 +34,18 @@ export function parseKind(name: string): ReportKind | null {
   return null;
 }
 
-/** S3 キー名から表示用ラベルを作る。 */
+/** S3 キー名から表示用ラベル（JST）を作る。 */
 export function reportLabel(name: string): string {
   const rest = name.replace(/^(config|operations)-/, "").replace(/\.md$/, "");
   if (rest === "latest") {
     return "最新";
   }
-  // 2026-06-18T010259Z → 2026-06-18 01:02:59 UTC
+  // 2026-06-18T010259Z（UTC, コロン無し） → ISO に戻して JST へ整形
   const m = rest.match(/^(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
-  return m ? `${m[1]} ${m[2]}:${m[3]}:${m[4]} UTC` : rest;
+  if (!m) {
+    return rest;
+  }
+  return formatJst(`${m[1]}T${m[2]}:${m[3]}:${m[4]}Z`);
 }
 
 /**
@@ -122,6 +126,18 @@ export async function generateReport(
   }
 }
 
+/**
+ * レポート本文中の「生成日時: <UTC ISO>」を JST 表記へ変換する（表示用）。
+ * 既存（UTC ISO で保存済み）レポートも即 JST 表示にするための後処理。
+ * 既に JST 表記（Z を含まない）の本文は対象外なのでそのまま。
+ */
+export function jstifyGeneratedAt(markdown: string): string {
+  return markdown.replace(
+    /(生成日時:\s*)(\d{4}-\d{2}-\d{2}T[\d:.]+Z)/g,
+    (_full, prefix: string, iso: string) => `${prefix}${formatJst(iso)}`,
+  );
+}
+
 /** 指定レポート(Markdown)を取得する。name は reports/ を除いたファイル名。 */
 export async function getReport(name: string): Promise<string | null> {
   // パストラバーサル防止: ファイル名のみ許可。
@@ -133,7 +149,8 @@ export async function getReport(name: string): Promise<string | null> {
     const res = await s3.send(
       new GetObjectCommand({ Bucket: bucket, Key: `${PREFIX}${name}` }),
     );
-    return (await res.Body?.transformToString()) ?? null;
+    const md = await res.Body?.transformToString();
+    return md === undefined ? null : jstifyGeneratedAt(md);
   } catch {
     return null;
   }

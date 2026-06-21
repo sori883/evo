@@ -57,8 +57,8 @@ describe("EvoStack", () => {
     });
   });
 
-  it("DynamoDB テーブルを 1 つ持つ", () => {
-    template.resourceCountIs("AWS::DynamoDB::Table", 1);
+  it("DynamoDB テーブルを 2 つ持つ（共有データ + incident dedup）", () => {
+    template.resourceCountIs("AWS::DynamoDB::Table", 2);
   });
 
   it("主要なリソースIDを出力する", () => {
@@ -208,13 +208,33 @@ describe("EvoStack", () => {
     });
   });
 
-  it("CloudWatch アラーム(→ALARM)で発火する EventBridge Rule を持つ", () => {
+  it("新規 ALARM 遷移のみ発火する EventBridge Rule を持つ（再評価は除外）", () => {
     template.hasResourceProperties("AWS::Events::Rule", {
       EventPattern: Match.objectLike({
         source: ["aws.cloudwatch"],
         "detail-type": ["CloudWatch Alarm State Change"],
-        detail: { state: { value: ["ALARM"] } },
+        detail: {
+          state: { value: ["ALARM"] },
+          previousState: { value: [{ "anything-but": "ALARM" }] },
+        },
       }),
+    });
+  });
+
+  it("dedup 用 DynamoDB（TTL）を持ち、Lambda env に窓設定を注入", () => {
+    template.hasResourceProperties("AWS::DynamoDB::Table", {
+      KeySchema: Match.arrayWith([
+        Match.objectLike({ AttributeName: "alarmName", KeyType: "HASH" }),
+      ]),
+      TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+    });
+    template.hasResourceProperties("AWS::Lambda::Function", {
+      Environment: {
+        Variables: Match.objectLike({
+          DEDUP_TABLE_NAME: Match.anyValue(),
+          DEDUP_WINDOW_SECONDS: "900",
+        }),
+      },
     });
   });
 

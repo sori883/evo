@@ -15,6 +15,8 @@ const schema = z.object({
   REPORT_RUNTIME_ARN: z.string().min(1),
   /** 共有 skill ストアを閲覧するための S3 バケット。 */
   SKILLS_BUCKET: z.string().min(1),
+  /** インシデント診断レポートを閲覧するための S3 バケット。 */
+  INCIDENTS_BUCKET: z.string().min(1),
 });
 
 export type ServerEnv = z.infer<typeof schema>;

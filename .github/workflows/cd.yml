@@ -4,7 +4,12 @@ name: CD (infra deploy)
 # 事前準備（docs/deploy.md 参照）:
 #   - AWS 側に GitHub OIDC プロバイダ + デプロイ用 IAM ロール
 #   - GitHub secrets: AWS_DEPLOY_ROLE_ARN, AWS_ACCOUNT_ID
+#       （任意）EVO_GITHUB_PAT … incident の PR 作成用 fine-grained PAT。
+#         secret / local .env / 実行時 env すべて EVO_GITHUB_PAT で統一。
+#         未設定なら incident は diagnosis のみ（PR 機能オフ）。
 #   - GitHub variables: BEDROCK_MODEL_ID, AGENT_MANAGED_RUNTIME
+#       （任意）INCIDENT_MODEL_ID … incident のモデル上書き（未設定なら BEDROCK_MODEL_ID）。
+#       （任意）GITHUB_REPO … 対象リポジトリ（未設定なら sori883/evo）。
 #   - CDK bootstrap 済み / Bedrock モデルアクセス有効化済み
 
 on:
@@ -33,7 +38,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm --filter @evo/shared build
+      - name: Build shared libraries
+        run: |
+          pnpm --filter @evo/shared build
+          pnpm --filter @evo/agent-tools build
 
       # CodeZip(node_modules 同梱方式) を組み立てる（infra が agents/chat/deploy を Asset 化）。
       - name: Package agents (CodeZip)
@@ -44,6 +52,9 @@ jobs:
           pnpm --filter @evo/agent-report build
           pnpm --filter @evo/agent-report --config.node-linker=hoisted deploy --prod --legacy agents/report/deploy
           rm -rf agents/report/deploy/node_modules/.bin
+          pnpm --filter @evo/agent-incident build
+          pnpm --filter @evo/agent-incident --config.node-linker=hoisted deploy --prod --legacy agents/incident/deploy
+          rm -rf agents/incident/deploy/node_modules/.bin
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
@@ -59,6 +70,11 @@ jobs:
           CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
           BEDROCK_MODEL_ID: ${{ vars.BEDROCK_MODEL_ID }}
           AGENT_MANAGED_RUNTIME: ${{ vars.AGENT_MANAGED_RUNTIME }}
+          # incident（未設定なら app.ts 側で既定にフォールバック）
+          INCIDENT_MODEL_ID: ${{ vars.INCIDENT_MODEL_ID }}
+          GITHUB_REPO: ${{ vars.GITHUB_REPO }}
+          # PR 作成用 PAT。secret / local .env / 実行時 env すべて EVO_GITHUB_PAT で統一。未設定=空。
+          EVO_GITHUB_PAT: ${{ secrets.EVO_GITHUB_PAT }}
 
       - name: Upload stack outputs
         uses: actions/upload-artifact@v4

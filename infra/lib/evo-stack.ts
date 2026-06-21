@@ -3,6 +3,7 @@ import { Construct } from "constructs";
 import { AgentConstruct } from "./constructs/agent";
 import { AuthConstruct } from "./constructs/auth";
 import { DataConstruct } from "./constructs/data";
+import { IncidentConstruct } from "./constructs/incident";
 import { MemoryConstruct } from "./constructs/memory";
 import { ReportConstruct } from "./constructs/report";
 import { SkillStore } from "./constructs/skill-store";
@@ -22,6 +23,16 @@ export interface EvoStackProps extends cdk.StackProps {
   reportScheduleExpression: string;
   /** base skill のシード元（リポジトリ `skills/` ディレクトリ）。 */
   skillsSeedPath: string;
+  /** agents/incident の pnpm deploy 出力ディレクトリ。 */
+  incidentCodePath: string;
+  /** incident Runtime 名（例: evo_incident）。 */
+  incidentRuntimeName: string;
+  /** incident のモデルID（既定は modelId にフォールバック）。 */
+  incidentModelId: string;
+  /** GitHub PAT（PR 作成用。未設定可）。 */
+  githubToken: string;
+  /** 対象リポジトリ（例: sori883/evo）。 */
+  githubRepo: string;
 }
 
 /**
@@ -88,6 +99,26 @@ export class EvoStack extends cdk.Stack {
     });
     new cdk.CfnOutput(this, "SkillsBucketName", {
       value: skills.bucket.bucketName,
+    });
+
+    // インシデント対処エージェント（アラーム駆動・read-only 診断・対処は PR）。
+    const incident = new IncidentConstruct(this, "Incident", {
+      skillStore: skills,
+      agentId: "incident",
+      modelId: props.incidentModelId,
+      managedRuntime: props.managedRuntime,
+      codePath: props.incidentCodePath,
+      runtimeName: props.incidentRuntimeName,
+      targetTagKey: "evo-target",
+      targetTagValue: "true",
+      githubToken: props.githubToken,
+      githubRepo: props.githubRepo,
+    });
+    new cdk.CfnOutput(this, "IncidentRuntimeArn", {
+      value: incident.runtime.attrAgentRuntimeArn,
+    });
+    new cdk.CfnOutput(this, "IncidentsBucketName", {
+      value: incident.bucket.bucketName,
     });
   }
 }

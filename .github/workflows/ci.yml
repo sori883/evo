@@ -20,8 +20,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # consumer は @evo/shared の dist を参照するため先に build
-      - run: pnpm --filter @evo/shared build
+      # consumer は @evo/shared / @evo/agent-tools の dist を参照するため先に build
+      - name: Build shared libraries
+        run: |
+          pnpm --filter @evo/shared build
+          pnpm --filter @evo/agent-tools build
 
       - name: Typecheck (all)
         run: pnpm -r typecheck
@@ -40,6 +43,9 @@ jobs:
           pnpm --filter @evo/agent-report build
           pnpm --filter @evo/agent-report --config.node-linker=hoisted deploy --prod --legacy agents/report/deploy
           rm -rf agents/report/deploy/node_modules/.bin
+          pnpm --filter @evo/agent-incident build
+          pnpm --filter @evo/agent-incident --config.node-linker=hoisted deploy --prod --legacy agents/incident/deploy
+          rm -rf agents/incident/deploy/node_modules/.bin
 
       - name: Build web
         run: pnpm --filter @evo/web build

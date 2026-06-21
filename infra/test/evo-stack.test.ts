@@ -19,6 +19,11 @@ function buildTemplate(): Template {
     reportScheduleExpression: "rate(1 day)",
     // skill seed も S3 Asset/BucketDeployment になるため実在ディレクトリを使う。
     skillsSeedPath: path.join(__dirname),
+    incidentCodePath: path.join(__dirname),
+    incidentRuntimeName: "evo_incident_test",
+    incidentModelId: "jp.anthropic.claude-test-v1:0",
+    githubToken: "",
+    githubRepo: "sori883/evo",
   });
   return Template.fromStack(stack);
 }
@@ -178,8 +183,67 @@ describe("EvoStack", () => {
     });
   });
 
-  it("レポート用 Runtime を持つ（chat と合わせ 2 つ）", () => {
-    template.resourceCountIs("AWS::BedrockAgentCore::Runtime", 2);
+  it("Runtime を 3 つ持つ（chat / report / incident）", () => {
+    template.resourceCountIs("AWS::BedrockAgentCore::Runtime", 3);
+  });
+
+  it("incident Runtime は JWT authorizer を持たない（SigV4）かつ env を注入", () => {
+    const runtimes = template.findResources("AWS::BedrockAgentCore::Runtime");
+    const incident = Object.values(runtimes).find(
+      (r) =>
+        (r.Properties as { AgentRuntimeName?: string }).AgentRuntimeName ===
+        "evo_incident_test",
+    );
+    expect(incident).toBeDefined();
+    const props = incident?.Properties as {
+      AuthorizerConfiguration?: unknown;
+      EnvironmentVariables?: Record<string, unknown>;
+    };
+    expect(props.AuthorizerConfiguration).toBeUndefined();
+    expect(props.EnvironmentVariables).toMatchObject({
+      AGENT_ID: "incident",
+      INCIDENT_MODEL_ID: "jp.anthropic.claude-test-v1:0",
+      INCIDENTS_BUCKET: expect.anything(),
+      GITHUB_REPO: "sori883/evo",
+    });
+  });
+
+  it("CloudWatch アラーム(→ALARM)で発火する EventBridge Rule を持つ", () => {
+    template.hasResourceProperties("AWS::Events::Rule", {
+      EventPattern: Match.objectLike({
+        source: ["aws.cloudwatch"],
+        "detail-type": ["CloudWatch Alarm State Change"],
+        detail: { state: { value: ["ALARM"] } },
+      }),
+    });
+  });
+
+  it("アラーム中継 Lambda が InvokeAgentRuntime 権限を持つ", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "bedrock-agentcore:InvokeAgentRuntime",
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it("incident 実行ロールが収集(read-only)権限を持ち、書込系を持たない", () => {
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith([
+              "tag:GetResources",
+              "cloudwatch:DescribeAlarms",
+              "logs:StartQuery",
+            ]),
+          }),
+        ]),
+      }),
+    });
   });
 
   it("レポート Runtime は JWT authorizer を持たない（SigV4 認証）", () => {
@@ -196,8 +260,8 @@ describe("EvoStack", () => {
     ).toBeUndefined();
   });
 
-  it("S3 バケットを 2 つ持つ（レポート用 + 共有 skill 用）", () => {
-    template.resourceCountIs("AWS::S3::Bucket", 2);
+  it("S3 バケットを 3 つ持つ（レポート + 共有 skill + インシデント）", () => {
+    template.resourceCountIs("AWS::S3::Bucket", 3);
   });
 
   it("レポート用 EventBridge Schedule を持つ", () => {

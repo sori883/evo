@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import { RemovalPolicy, Stack } from "aws-cdk-lib";
 import * as agentcore from "aws-cdk-lib/aws-bedrockagentcore";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -176,6 +177,14 @@ export class IncidentConstruct extends Construct {
       },
     });
 
+    // 時間窓 dedup 用 DynamoDB（TTL）。フラッピング時の重複インシデントを抑止。
+    const dedupTable = new dynamodb.Table(this, "DedupTable", {
+      partitionKey: { name: "alarmName", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: "expiresAt",
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     // CloudWatch アラーム(→ALARM) → EventBridge Rule → 中継 Lambda → InvokeAgentRuntime
     const invoker = new NodejsFunction(this, "AlarmInvoker", {
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -185,6 +194,8 @@ export class IncidentConstruct extends Construct {
       bundling: { externalModules: [], target: "node22" },
       environment: {
         AGENT_RUNTIME_ARN: this.runtime.attrAgentRuntimeArn,
+        DEDUP_TABLE_NAME: dedupTable.tableName,
+        DEDUP_WINDOW_SECONDS: "900",
       },
     });
     invoker.addToRolePolicy(
@@ -196,13 +207,18 @@ export class IncidentConstruct extends Construct {
         ],
       }),
     );
+    dedupTable.grantWriteData(invoker);
 
     const rule = new events.Rule(this, "AlarmRule", {
       description: "CloudWatch アラーム(→ALARM)で incident エージェントを起動",
       eventPattern: {
         source: ["aws.cloudwatch"],
         detailType: ["CloudWatch Alarm State Change"],
-        detail: { state: { value: ["ALARM"] } },
+        // 新規 ALARM 遷移のみ（ALARM→ALARM の再評価は除外）。
+        detail: {
+          state: { value: ["ALARM"] },
+          previousState: { value: [{ "anything-but": "ALARM" }] },
+        },
       },
     });
     rule.addTarget(new targets.LambdaFunction(invoker, { retryAttempts: 2 }));

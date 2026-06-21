@@ -3,6 +3,7 @@ import { BedrockAgentCoreApp } from "bedrock-agentcore/runtime";
 import { parseAlarmEvent } from "./alarm.js";
 import { createIncidentAgent } from "./agent.js";
 import { loadEnv } from "./env.js";
+import { createGithubTools } from "./github.js";
 import { createS3SkillStorage, syncSkills } from "./skill-sync.js";
 import { saveIncident } from "./storage.js";
 import {
@@ -35,9 +36,15 @@ const app = new BedrockAgentCoreApp({
     process: async (request) => {
       const alarm = parseAlarmEvent(request);
 
+      // PAT がある時のみコード対処(PR)ツールを有効化する。
+      const github = env.EVO_GITHUB_PAT
+        ? createGithubTools(env.GITHUB_REPO, env.EVO_GITHUB_PAT)
+        : undefined;
+
       const agent = createIncidentAgent(env, {
         skillDirs,
         storage: skillStorage,
+        githubTools: github?.tools,
       });
       const result = await agent.invoke(buildDiagnosisPrompt(alarm));
       const triage = triageSchema.parse(result.structuredOutput);
@@ -47,6 +54,7 @@ const app = new BedrockAgentCoreApp({
         alarmName: alarm.alarmName,
         detectedAt: alarm.timestamp ?? generatedAt,
         generatedAt,
+        pr: github?.state.lastPr,
       });
       const saved = await saveIncident(
         s3,
@@ -62,6 +70,7 @@ const app = new BedrockAgentCoreApp({
         needsAction: triage.needsAction,
         severity: triage.severity,
         key: saved.key,
+        prUrl: github?.state.lastPr?.url,
       };
     },
   },

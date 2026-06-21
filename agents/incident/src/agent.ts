@@ -1,6 +1,6 @@
 import { createCollectionTools } from "@evo/agent-tools";
 import { type SkillStorage } from "@evo/shared";
-import { Agent, BedrockModel } from "@strands-agents/sdk";
+import { Agent, BedrockModel, type tool } from "@strands-agents/sdk";
 import { AgentSkills } from "@strands-agents/sdk/vended-plugins/skills";
 import type { IncidentEnv } from "./env.js";
 import { createSkillTools } from "./skill-tools.js";
@@ -12,6 +12,10 @@ const SYSTEM_PROMPT = [
   "アラーム・構成を調べ、根本原因を推定します。AWS リソースは一切変更しません。",
   "incident-response スキルの手順に従い、事実に基づいて『対応要否』を判定し、",
   "構造化スキーマ(triageSchema)で出力してください。確認できないことは断定しません。",
+  "対応が必要(needsAction=true)で原因がコード/設定に起因する場合は、",
+  "read_repo_file / search_repo_code でコードを確認し、最小限の修正を施した上で",
+  "open_fix_pr で Pull Request を作成してください（承認はレビュー/マージで行われます）。",
+  "AWS リソースの変更が必要な場合も直接操作せず CDK の差分として PR にします。",
   "手順を恒久的に改善したい場合は improve_skill ツールで skill を更新できます。",
 ].join("\n");
 
@@ -20,9 +24,11 @@ export interface IncidentAgentDeps {
   skillDirs: string[];
   /** 自己改善ツールが書き込む skill ストレージ。 */
   storage: SkillStorage;
+  /** コード対処（PR 作成）ツール。PAT 未設定時は空。 */
+  githubTools?: ReturnType<typeof tool>[];
 }
 
-/** インシデント診断用 Strands エージェント（収集ツール + skill + 構造化出力）。 */
+/** インシデント診断/対処用 Strands エージェント（収集 + skill + (PR) + 構造化出力）。 */
 export function createIncidentAgent(
   env: IncidentEnv,
   deps: IncidentAgentDeps,
@@ -36,6 +42,7 @@ export function createIncidentAgent(
     tools: [
       ...createCollectionTools(env),
       ...createSkillTools(deps.storage, env.AGENT_ID),
+      ...(deps.githubTools ?? []),
     ],
     plugins:
       deps.skillDirs.length > 0

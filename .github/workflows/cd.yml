@@ -38,7 +38,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm --filter @evo/shared build
+      - name: Build shared libraries
+        run: |
+          pnpm --filter @evo/shared build
+          pnpm --filter @evo/agent-tools build
 
       # CodeZip(node_modules 同梱方式) を組み立てる（infra が agents/chat/deploy を Asset 化）。
       - name: Package agents (CodeZip)

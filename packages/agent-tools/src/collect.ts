@@ -18,7 +18,16 @@ import {
 } from "@aws-sdk/client-resource-groups-tagging-api";
 import { tool } from "@strands-agents/sdk";
 import { z } from "zod";
-import type { ReportEnv } from "./env.js";
+
+/**
+ * 収集ツールが必要とする最小の環境設定。各エージェントの env が
+ * 構造的にこれを満たす（report/incident など）。
+ */
+export interface CollectEnv {
+  AWS_REGION: string;
+  TARGET_TAG_KEY: string;
+  TARGET_TAG_VALUE: string;
+}
 
 /** ARN からサービス/リソース種別をざっくり取り出す（構成把握の手がかり）。 */
 export function resourceTypeFromArn(arn: string): string {
@@ -37,9 +46,9 @@ const errText = (e: unknown): string =>
 
 /**
  * read-only な収集ツール群（Strands tool）。LLM が必要に応じて呼ぶ。
- * AWS リソースは一切変更しない。
+ * AWS リソースは一切変更しない。report / incident で共有する。
  */
-export function createCollectionTools(env: ReportEnv) {
+export function createCollectionTools(env: CollectEnv) {
   const region = env.AWS_REGION;
   const tagging = new ResourceGroupsTaggingAPIClient({ region });
   const cw = new CloudWatchClient({ region });

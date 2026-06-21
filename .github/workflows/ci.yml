@@ -40,6 +40,9 @@ jobs:
           pnpm --filter @evo/agent-report build
           pnpm --filter @evo/agent-report --config.node-linker=hoisted deploy --prod --legacy agents/report/deploy
           rm -rf agents/report/deploy/node_modules/.bin
+          pnpm --filter @evo/agent-incident build
+          pnpm --filter @evo/agent-incident --config.node-linker=hoisted deploy --prod --legacy agents/incident/deploy
+          rm -rf agents/incident/deploy/node_modules/.bin
 
       - name: Build web
         run: pnpm --filter @evo/web build

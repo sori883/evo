@@ -1,0 +1,33 @@
+{
+  "name": "@evo/agent-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1069.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.1069.0",
+    "@aws-sdk/client-inspector2": "^3.1069.0",
+    "@aws-sdk/client-resource-groups-tagging-api": "^3.1069.0",
+    "@strands-agents/sdk": "1.6.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

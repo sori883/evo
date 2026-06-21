@@ -24,4 +24,12 @@ new EvoStack(app, "EvoStack", {
     process.env.REPORT_SCHEDULE_EXPRESSION ?? "rate(1 day)",
   // base skill のシード元（リポジトリ直下 skills/）
   skillsSeedPath: path.join(__dirname, "..", "..", "skills"),
+  // incident エージェント（CodeZip / モデル / GitHub）
+  incidentCodePath: path.join(__dirname, "..", "..", "agents", "incident", "deploy"),
+  // CI の未設定変数は空文字になるため、既定値には || を使う。
+  incidentRuntimeName: process.env.INCIDENT_RUNTIME_NAME || "evo_incident",
+  // 既定は共通モデル（Haiku）。INCIDENT_MODEL_ID で上位モデルに切替可。
+  incidentModelId: process.env.INCIDENT_MODEL_ID || modelId,
+  githubToken: process.env.GITHUB_TOKEN ?? "",
+  githubRepo: process.env.GITHUB_REPO || "sori883/evo",
 });

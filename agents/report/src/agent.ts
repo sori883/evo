@@ -1,7 +1,7 @@
 import { type SkillStorage } from "@evo/shared";
 import { Agent, BedrockModel } from "@strands-agents/sdk";
 import { AgentSkills } from "@strands-agents/sdk/vended-plugins/skills";
-import { createCollectionTools } from "./collect.js";
+import { createCollectionTools } from "@evo/agent-tools";
 import type { ReportEnv } from "./env.js";
 import { reportSchema } from "./report.js";
 import { createSkillTools } from "./skill-tools.js";

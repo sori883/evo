@@ -5,8 +5,8 @@ name: CD (infra deploy)
 #   - AWS 側に GitHub OIDC プロバイダ + デプロイ用 IAM ロール
 #   - GitHub secrets: AWS_DEPLOY_ROLE_ARN, AWS_ACCOUNT_ID
 #       （任意）EVO_GITHUB_PAT … incident の PR 作成用 fine-grained PAT。
+#         secret / local .env / 実行時 env すべて EVO_GITHUB_PAT で統一。
 #         未設定なら incident は diagnosis のみ（PR 機能オフ）。
-#         ※ シークレット名に GITHUB_TOKEN は使えない（予約名）ため別名にする。
 #   - GitHub variables: BEDROCK_MODEL_ID, AGENT_MANAGED_RUNTIME
 #       （任意）INCIDENT_MODEL_ID … incident のモデル上書き（未設定なら BEDROCK_MODEL_ID）。
 #       （任意）GITHUB_REPO … 対象リポジトリ（未設定なら sori883/evo）。
@@ -70,8 +70,8 @@ jobs:
           # incident（未設定なら app.ts 側で既定にフォールバック）
           INCIDENT_MODEL_ID: ${{ vars.INCIDENT_MODEL_ID }}
           GITHUB_REPO: ${{ vars.GITHUB_REPO }}
-          # PR 作成用 PAT（予約名回避のため secret 名は EVO_GITHUB_PAT）。未設定=空。
-          GITHUB_TOKEN: ${{ secrets.EVO_GITHUB_PAT }}
+          # PR 作成用 PAT。secret / local .env / 実行時 env すべて EVO_GITHUB_PAT で統一。未設定=空。
+          EVO_GITHUB_PAT: ${{ secrets.EVO_GITHUB_PAT }}
 
       - name: Upload stack outputs
         uses: actions/upload-artifact@v4

@@ -30,6 +30,6 @@ new EvoStack(app, "EvoStack", {
   incidentRuntimeName: process.env.INCIDENT_RUNTIME_NAME || "evo_incident",
   // 既定は共通モデル（Haiku）。INCIDENT_MODEL_ID で上位モデルに切替可。
   incidentModelId: process.env.INCIDENT_MODEL_ID || modelId,
-  githubToken: process.env.GITHUB_TOKEN ?? "",
+  githubToken: process.env.EVO_GITHUB_PAT ?? "",
   githubRepo: process.env.GITHUB_REPO || "sori883/evo",
 });

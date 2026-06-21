@@ -170,8 +170,8 @@ export class IncidentConstruct extends Construct {
         AGENT_ID: props.agentId,
         TARGET_TAG_KEY: props.targetTagKey,
         TARGET_TAG_VALUE: props.targetTagValue,
-        // PR 作成用（EVO-36 で使用。未設定可）。
-        GITHUB_TOKEN: props.githubToken,
+        // PR 作成用（EVO-36 で使用。未設定可）。名前は env/secret/var で統一。
+        EVO_GITHUB_PAT: props.githubToken,
         GITHUB_REPO: props.githubRepo,
       },
     });

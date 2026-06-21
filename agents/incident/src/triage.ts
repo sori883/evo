@@ -53,6 +53,8 @@ export interface IncidentMeta {
   detectedAt: string;
   /** 生成時刻（ISO, UTC）。 */
   generatedAt: string;
+  /** コード対処で作成した PR（あれば）。 */
+  pr?: { url: string; number: number };
 }
 
 /** 対応要否の表示ラベル。 */
@@ -95,6 +97,15 @@ export function renderIncidentMarkdown(
   lines.push(section("観測した事実", t.evidence));
   lines.push(section("根本原因の仮説", t.rootCauseHypothesis));
   lines.push(section("推奨対応", t.recommendation));
+
+  lines.push("## 対処");
+  lines.push("");
+  if (meta.pr) {
+    lines.push(`- 修正 PR を作成しました（承認はレビュー/マージ）: [#${meta.pr.number}](${meta.pr.url})`);
+  } else {
+    lines.push("_（自動修正 PR なし。推奨対応を参照）_");
+  }
+  lines.push("");
 
   lines.push("## 影響リソース");
   lines.push("");

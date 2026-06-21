@@ -71,5 +71,16 @@ describe("renderIncidentMarkdown", () => {
     );
     expect(md).toContain("**判定: 対応不要**");
     expect(md).toContain("_（特定なし）_");
+    // PR 無しは対処プレースホルダ
+    expect(md).toContain("_（自動修正 PR なし。推奨対応を参照）_");
+  });
+
+  it("PR があれば対処セクションにリンクを出す", () => {
+    const md = renderIncidentMarkdown(alarm, triage, {
+      ...meta,
+      pr: { url: "https://github.com/sori883/evo/pull/99", number: 99 },
+    });
+    expect(md).toContain("## 対処");
+    expect(md).toContain("[#99](https://github.com/sori883/evo/pull/99)");
   });
 });

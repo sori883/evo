@@ -17,6 +17,10 @@ const envSchema = z.object({
   /** 監視対象を選ぶタグ（収集ツール用）。 */
   TARGET_TAG_KEY: z.string().min(1),
   TARGET_TAG_VALUE: z.string().min(1),
+  /** PR 作成用 fine-grained PAT。空なら PR 機能オフ（diagnosis のみ）。 */
+  EVO_GITHUB_PAT: z.string().default(""),
+  /** 対象リポジトリ（owner/name）。 */
+  GITHUB_REPO: z.string().default("sori883/evo"),
 });
 
 export type IncidentEnv = z.infer<typeof envSchema>;

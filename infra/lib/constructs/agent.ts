@@ -16,6 +16,8 @@ export interface AgentConstructProps {
   table: dynamodb.ITable;
   /** 運用レポートを読む S3 バケット（chat の get_latest_report 用）。 */
   reportsBucket: s3.IBucket;
+  /** インシデントレポートを読む S3 バケット（chat の get_latest_incident 用）。 */
+  incidentsBucket: s3.IBucket;
   /** 共有 skill ストア。chat はハブとして全 namespace を読む。 */
   skillStore: SkillStore;
   /** 自分の skill namespace（= "chat"）。 */
@@ -135,6 +137,8 @@ export class AgentConstruct extends Construct {
     props.table.grantReadWriteData(this.executionRole);
     // 運用レポート(Markdown)の読み取り（reports/ 配下のみ）
     props.reportsBucket.grantRead(this.executionRole, "reports/*");
+    // インシデントレポート(Markdown)の読み取り（incidents/ 配下のみ）
+    props.incidentsBucket.grantRead(this.executionRole, "incidents/*");
     // 共有 skill: chat はハブ（全 namespace 読み取り）。書込は自分の dynamic のみ。
     props.skillStore.grantRead(this.executionRole, props.agentId, true);
     props.skillStore.grantWriteDynamic(this.executionRole, props.agentId);
@@ -177,6 +181,7 @@ export class AgentConstruct extends Construct {
         COGNITO_USER_POOL_ID: props.userPool.userPoolId,
         COGNITO_CLIENT_ID: props.userPoolClient.userPoolClientId,
         REPORTS_BUCKET: props.reportsBucket.bucketName,
+        INCIDENTS_BUCKET: props.incidentsBucket.bucketName,
         SHARED_TABLE_NAME: props.table.tableName,
         SKILLS_BUCKET: props.skillStore.bucket.bucketName,
         AGENT_ID: props.agentId,

@@ -67,12 +67,28 @@ export class EvoStack extends cdk.Stack {
       scheduleExpression: props.reportScheduleExpression,
     });
 
+    // インシデント対処エージェント（アラーム駆動・read-only 診断・対処は PR）。
+    // chat が incidents バケットを参照するため Agent より先に作る。
+    const incident = new IncidentConstruct(this, "Incident", {
+      skillStore: skills,
+      agentId: "incident",
+      modelId: props.incidentModelId,
+      managedRuntime: props.managedRuntime,
+      codePath: props.incidentCodePath,
+      runtimeName: props.incidentRuntimeName,
+      targetTagKey: "evo-target",
+      targetTagValue: "true",
+      githubToken: props.githubToken,
+      githubRepo: props.githubRepo,
+    });
+
     const agent = new AgentConstruct(this, "Agent", {
       userPool: auth.userPool,
       userPoolClient: auth.userPoolClient,
       memory: memory.memory,
       table: data.table,
       reportsBucket: report.bucket,
+      incidentsBucket: incident.bucket,
       skillStore: skills,
       agentId: "chat",
       modelId: props.modelId,
@@ -101,19 +117,6 @@ export class EvoStack extends cdk.Stack {
       value: skills.bucket.bucketName,
     });
 
-    // インシデント対処エージェント（アラーム駆動・read-only 診断・対処は PR）。
-    const incident = new IncidentConstruct(this, "Incident", {
-      skillStore: skills,
-      agentId: "incident",
-      modelId: props.incidentModelId,
-      managedRuntime: props.managedRuntime,
-      codePath: props.incidentCodePath,
-      runtimeName: props.incidentRuntimeName,
-      targetTagKey: "evo-target",
-      targetTagValue: "true",
-      githubToken: props.githubToken,
-      githubRepo: props.githubRepo,
-    });
     new cdk.CfnOutput(this, "IncidentRuntimeArn", {
       value: incident.runtime.attrAgentRuntimeArn,
     });

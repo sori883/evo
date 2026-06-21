@@ -2,6 +2,7 @@ import { type SkillStorage } from "@evo/shared";
 import { Agent, BedrockModel } from "@strands-agents/sdk";
 import { AgentSkills } from "@strands-agents/sdk/vended-plugins/skills";
 import type { AgentEnv } from "./env.js";
+import { createIncidentTools } from "./incident-tools.js";
 import { createReportTools } from "./report-tools.js";
 import { createSkillTools } from "./skill-tools.js";
 
@@ -14,6 +15,8 @@ const SYSTEM_PROMPT = [
   "アーキテクチャ・リソース構成は kind=config(構成) を使います。",
   "レポートの内容や作り方への要望（次回○○も載せて、構成の誤り指摘 等）があれば、",
   "request_report_change ツールで登録してください。",
+  "アラート・障害・インシデントの状況や対応要否・修正PRを聞かれたら、",
+  "get_latest_incident で最新のインシデント診断を参照して答えてください。",
   "自分の応答手順を恒久的に改善したい場合は improve_skill ツールで skill を更新できます（次回起動から適用）。",
 ].join("\n");
 
@@ -48,6 +51,7 @@ export function createAgent(
     systemPrompt,
     tools: [
       ...createReportTools(env),
+      ...createIncidentTools(env),
       ...createSkillTools(deps.storage, env.AGENT_ID),
     ],
     // sync した skill がある時だけ AgentSkills を有効化する（空でも起動可能に）。

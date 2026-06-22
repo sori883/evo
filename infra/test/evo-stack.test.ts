@@ -239,6 +239,25 @@ describe("EvoStack", () => {
     });
   });
 
+  it("chat が report を起動できる（env + InvokeAgentRuntime 権限）", () => {
+    template.hasResourceProperties("AWS::BedrockAgentCore::Runtime", {
+      AgentRuntimeName: "evo_chat_test",
+      EnvironmentVariables: Match.objectLike({
+        REPORT_RUNTIME_ARN: Match.anyValue(),
+        INCIDENTS_BUCKET: Match.anyValue(),
+      }),
+    });
+    template.hasResourceProperties("AWS::IAM::Policy", {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: "bedrock-agentcore:InvokeAgentRuntime",
+          }),
+        ]),
+      }),
+    });
+  });
+
   it("アラーム中継 Lambda が InvokeAgentRuntime 権限を持つ", () => {
     template.hasResourceProperties("AWS::IAM::Policy", {
       PolicyDocument: Match.objectLike({

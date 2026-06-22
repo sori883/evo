@@ -89,6 +89,7 @@ export class EvoStack extends cdk.Stack {
       table: data.table,
       reportsBucket: report.bucket,
       incidentsBucket: incident.bucket,
+      reportRuntimeArn: report.runtime.attrAgentRuntimeArn,
       skillStore: skills,
       agentId: "chat",
       modelId: props.modelId,

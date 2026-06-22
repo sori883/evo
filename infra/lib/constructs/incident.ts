@@ -1,5 +1,5 @@
 import * as path from "node:path";
-import { RemovalPolicy, Stack } from "aws-cdk-lib";
+import { Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import * as agentcore from "aws-cdk-lib/aws-bedrockagentcore";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
@@ -190,6 +190,8 @@ export class IncidentConstruct extends Construct {
       runtime: lambda.Runtime.NODEJS_22_X,
       entry: path.join(__dirname, "..", "lambda", "alarm-invoker.ts"),
       handler: "handler",
+      // InvokeAgentRuntime は診断完了まで同期で待つため、既定3秒では足りない。
+      timeout: Duration.seconds(120),
       // bedrock-agentcore クライアントはランタイム未同梱のため必ずバンドルする。
       bundling: { externalModules: [], target: "node22" },
       environment: {

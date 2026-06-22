@@ -229,6 +229,7 @@ describe("EvoStack", () => {
       TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
     });
     template.hasResourceProperties("AWS::Lambda::Function", {
+      Timeout: 120,
       Environment: {
         Variables: Match.objectLike({
           DEDUP_TABLE_NAME: Match.anyValue(),

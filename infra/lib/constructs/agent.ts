@@ -18,6 +18,8 @@ export interface AgentConstructProps {
   reportsBucket: s3.IBucket;
   /** インシデントレポートを読む S3 バケット（chat の get_latest_incident 用）。 */
   incidentsBucket: s3.IBucket;
+  /** レポート生成を依頼する report Runtime の ARN（chat の generate_report 用）。 */
+  reportRuntimeArn: string;
   /** 共有 skill ストア。chat はハブとして全 namespace を読む。 */
   skillStore: SkillStore;
   /** 自分の skill namespace（= "chat"）。 */
@@ -139,6 +141,13 @@ export class AgentConstruct extends Construct {
     props.reportsBucket.grantRead(this.executionRole, "reports/*");
     // インシデントレポート(Markdown)の読み取り（incidents/ 配下のみ）
     props.incidentsBucket.grantRead(this.executionRole, "incidents/*");
+    // レポート生成の依頼（report Runtime への InvokeAgentRuntime に限定）
+    this.executionRole.addToPolicy(
+      new iam.PolicyStatement({
+        actions: ["bedrock-agentcore:InvokeAgentRuntime"],
+        resources: [props.reportRuntimeArn, `${props.reportRuntimeArn}/*`],
+      }),
+    );
     // 共有 skill: chat はハブ（全 namespace 読み取り）。書込は自分の dynamic のみ。
     props.skillStore.grantRead(this.executionRole, props.agentId, true);
     props.skillStore.grantWriteDynamic(this.executionRole, props.agentId);
@@ -182,6 +191,7 @@ export class AgentConstruct extends Construct {
         COGNITO_CLIENT_ID: props.userPoolClient.userPoolClientId,
         REPORTS_BUCKET: props.reportsBucket.bucketName,
         INCIDENTS_BUCKET: props.incidentsBucket.bucketName,
+        REPORT_RUNTIME_ARN: props.reportRuntimeArn,
         SHARED_TABLE_NAME: props.table.tableName,
         SKILLS_BUCKET: props.skillStore.bucket.bucketName,
         AGENT_ID: props.agentId,

@@ -12,12 +12,13 @@ export type MemoryEvent = {
 };
 
 /**
- * Memory の ListEvents 結果（古い→新しい順を想定）を表示用メッセージ配列に変換する。
+ * Memory の ListEvents 結果を表示用メッセージ配列（時系列昇順=古い→新しい）に変換する。
+ * ListEvents は新しい順で返すため events を反転してから整形する。
  * USER/ASSISTANT の非空テキストのみ採用する。
  */
 export function eventsToMessages(events: MemoryEvent[]): ChatMessage[] {
   const messages: ChatMessage[] = [];
-  for (const event of events) {
+  for (const event of [...events].reverse()) {
     for (const item of event.payload ?? []) {
       const conv = item.conversational;
       const text = conv?.content?.text;

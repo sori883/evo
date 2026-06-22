@@ -64,10 +64,14 @@ function ChatView() {
       .finally(() => setLoadingHistory(false));
   }, [sessionParam]);
 
-  // 末尾へスクロール
+  // 末尾（最新）へスクロール。履歴読込直後はレイアウト確定後に確実に下げる。
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+    const el = scrollRef.current;
+    if (!el) return;
+    requestAnimationFrame(() => {
+      el.scrollTo({ top: el.scrollHeight });
+    });
+  }, [messages, loadingHistory]);
 
   const appendToLast = useCallback((text: string) => {
     setMessages((m) => {
